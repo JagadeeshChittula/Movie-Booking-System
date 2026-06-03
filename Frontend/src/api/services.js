@@ -1,0 +1,69 @@
+import client from './client';
+
+export const authApi = {
+  register: (data) => client.post('/auth/register', data),
+  login: (data) => client.post('/auth/login', data),
+};
+
+export const movieApi = {
+  getAll: () => client.get('/movies/all'),
+  getOne: (id) => client.get(`/movies/${id}`),
+  add: (data) => client.post('/movies/add', data),
+  update: (id, data) => client.put(`/movies/update/${id}`, data),
+  remove: (id) => client.delete(`/movies/delete/${id}`),
+};
+
+export const theatreApi = {
+  getAll: () => client.get('/theatres/all'),
+  getOne: (id) => client.get(`/theatres/${id}`),
+  add: (data) => client.post('/theatres/add', data),
+  update: (id, data) => client.put(`/theatres/${id}`, data),
+  remove: (id) => client.delete(`/theatres/${id}`),
+};
+
+export const screenApi = {
+  getAll: () => client.get('/screens/all'),
+  getByTheatre: (theatreId) => client.get(`/screens/theatre/${theatreId}`),
+  getOne: (id) => client.get(`/screens/${id}`),
+  add: (data) => client.post('/screens/add', data),
+  update: (id, data) => client.put(`/screens/${id}`, data),
+  remove: (id) => client.delete(`/screens/${id}`),
+};
+
+export const showApi = {
+  getAll: () => client.get('/shows/all'),
+  getOne: (id) => client.get(`/shows/${id}`),
+  getSeats: (showId) => client.get(`/shows/${showId}/seats`),
+  add: (data) => client.post('/shows/add', data),
+  update: (id, data) => client.put(`/shows/${id}`, data),
+  remove: (id) => client.delete(`/shows/${id}`),
+};
+
+export const seatLockApi = {
+  lock: (data) => client.post('/seat-lock/lock', data),
+  release: (data) => client.post('/seat-lock/release', data),
+};
+
+export const bookingApi = {
+  create: (data) => client.post('/bookings/create', data),
+  mine: () => client.get('/bookings/my-bookings'),
+  getOne: (id) => client.get(`/bookings/${id}`),
+  confirm: (id) => client.put(`/bookings/confirm/${id}`),
+  cancel: (id) => client.put(`/bookings/cancel/${id}`),
+  getAllAdmin: () => client.get('/bookings/admin/all'),
+};
+
+export const paymentApi = {
+  create: (data) => client.post('/payments/create', data),
+  success: (id) => client.put(`/payments/success/${id}`),
+  failed: (id) => client.put(`/payments/failed/${id}`),
+};
+
+export const userApi = {
+  profile: () => client.get('/users/profile'),
+  changePassword: (data) => client.put('/users/change-password', data),
+};
+
+export const dashboardApi = {
+  stats: () => client.get('/dashboard/stats'),
+};
