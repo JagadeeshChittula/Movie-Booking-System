@@ -23,6 +23,4 @@ router.put("/:id",protect,adminOnly,updateScreen);
 
 router.delete("/:id",protect,adminOnly,deleteScreen);
 
-router.get("/all", getAllScreens);
-
-module.exports = router;
+module.exports = router;

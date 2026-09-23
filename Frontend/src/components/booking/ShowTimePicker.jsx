@@ -1,4 +1,4 @@
-import { formatDate, formatTime, formatCurrency } from '../../utils/format';
+import { formatTime, formatCurrency } from '../../utils/format';
 
 export default function ShowTimePicker({
   shows,

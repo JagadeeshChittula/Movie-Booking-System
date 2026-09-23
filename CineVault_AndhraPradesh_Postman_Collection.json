@@ -1,0 +1,470 @@
+{
+  "info": {
+    "name": "CineVault - Andhra Pradesh (Vizag, VZM, SKLM) & Booking Flow",
+    "description": "Complete Postman collection for CineVault containing 56+ movies, 41 theatres across Visakhapatnam, Vizianagaram, and Srikakulam districts, 53 screens, 159 shows, and complete User Booking/Concessions/Usher Scanner lifecycle flows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "show_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "booking_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Admin Login (Jagadeesh)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('admin_token', json.token);",
+                  "  console.log('Admin token saved!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jagadeesh@gmail.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Register Sample User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('user_token', json.token);",
+                  "  console.log('User token saved!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Suresh Varma\",\n  \"email\": \"suresh.vizag@gmail.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Movies Management",
+      "item": [
+        {
+          "name": "Get All Movies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/movies/all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "movies",
+                "all"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Movie (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Devara: Part 1\",\n  \"description\": \"An epic action saga set against the coastal backdrop.\",\n  \"duration\": 178,\n  \"language\": \"Telugu\",\n  \"genre\": [\"Action\", \"Drama\", \"Thriller\"],\n  \"releaseDate\": \"2024-09-27\",\n  \"posterUrl\": \"https://image.tmdb.org/t/p/w500/A7O5Z2oM22J8tSflJjR69s8bZ5M.jpg\",\n  \"trailerUrl\": \"https://www.youtube.com/watch?v=kYfn7Wj7s1Q\",\n  \"rating\": 8.4\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/movies/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "movies",
+                "add"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Theatres & Screens (AP)",
+      "item": [
+        {
+          "name": "Get All Theatres",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/theatres/all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "theatres",
+                "all"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Theatre (Visakhapatnam)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jagadamba Multiplex\",\n  \"city\": \"Visakhapatnam\",\n  \"address\": \"Jagadamba Junction, Visakhapatnam, AP 530002\",\n  \"description\": \"Iconic Vizag cinema with Barco 4K Laser and Dolby Atmos\",\n  \"facilities\": [\"4K Laser\", \"Dolby Atmos\", \"Recliner Seats\", \"Parking\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/theatres/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "theatres",
+                "add"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Theatre (Vizianagaram)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"NCS Cinemas (Minerva Complex)\",\n  \"city\": \"Vizianagaram\",\n  \"address\": \"MG Road, Vizianagaram, AP 535002\",\n  \"description\": \"State of the art multi-screen cinema with Dolby sound.\",\n  \"facilities\": [\"4K Laser\", \"Dolby 7.1\", \"Snack Bar\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/theatres/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "theatres",
+                "add"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Theatre (Srikakulam)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Saraswathi Picture Palace\",\n  \"city\": \"Srikakulam\",\n  \"address\": \"Palakonda Road, Srikakulam, AP 532001\",\n  \"description\": \"Large 70mm screen with Dolby Atmos sound system.\",\n  \"facilities\": [\"Dolby Atmos\", \"4K Projection\", \"Cafeteria\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/theatres/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "theatres",
+                "add"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Shows",
+      "item": [
+        {
+          "name": "Get All Shows",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.shows && json.shows.length > 0) {",
+                  "  pm.collectionVariables.set('show_id', json.shows[0]._id);",
+                  "  console.log('Saved show_id:', json.shows[0]._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/shows/all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shows",
+                "all"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. User Booking Flow",
+      "item": [
+        {
+          "name": "Lock Seats (5-Min Hold)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"show\": \"{{show_id}}\",\n  \"seats\": [\"C1\", \"C2\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/seat-lock/lock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seat-lock",
+                "lock"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Booking with F&B Snacks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.booking) {",
+                  "  pm.collectionVariables.set('booking_id', json.booking._id);",
+                  "  console.log('Saved booking_id:', json.booking._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"show\": \"{{show_id}}\",\n  \"seats\": [\"C1\", \"C2\"],\n  \"totalAmount\": 890,\n  \"snacks\": [\n    {\n      \"id\": \"popcorn-salted\",\n      \"name\": \"Classic Salted Popcorn (Tub)\",\n      \"quantity\": 1,\n      \"price\": 220\n    }\n  ],\n  \"snackTotal\": 220,\n  \"discount\": 50,\n  \"couponCode\": \"CINE50\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/bookings/create",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "create"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Confirm Booking & Payment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/confirm/{{booking_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "confirm",
+                "{{booking_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Gatekeeper / Usher QR Ticket Scanner Check-In",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/check-in/{{booking_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "check-in",
+                "{{booking_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking & Free Seats",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/cancel/{{booking_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "cancel",
+                "{{booking_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

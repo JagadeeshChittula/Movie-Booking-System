@@ -3,7 +3,7 @@ const WATCHLIST_KEY = 'cinevault_watchlist';
 const CHECKOUT_KEY = 'cinevault_checkout';
 
 export function getCity() {
-  return localStorage.getItem(CITY_KEY) || 'Mumbai';
+  return localStorage.getItem(CITY_KEY) || 'Visakhapatnam';
 }
 
 export function setCity(city) {

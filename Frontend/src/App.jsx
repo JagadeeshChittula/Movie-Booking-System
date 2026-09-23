@@ -26,6 +26,7 @@ import AdminScreens from './pages/admin/AdminScreens';
 import AdminShows from './pages/admin/AdminShows';
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminTicketScanner from './pages/admin/AdminTicketScanner';
 
 export default function App() {
   return (
@@ -93,6 +94,7 @@ export default function App() {
 
               <Route path="admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
+                <Route path="scanner" element={<AdminTicketScanner />} />
                 <Route path="movies" element={<AdminMovies />} />
                 <Route path="theatres" element={<AdminTheatres />} />
                 <Route path="screens" element={<AdminScreens />} />

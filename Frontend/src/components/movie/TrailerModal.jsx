@@ -1,11 +1,26 @@
 import Modal from '../ui/Modal';
 
 export default function TrailerModal({ open, onClose, url }) {
-  const embedUrl = url?.includes('youtube.com/watch')
-    ? url.replace('watch?v=', 'embed/')
-    : url?.includes('youtu.be/')
-      ? `https://www.youtube.com/embed/${url.split('/').pop()}`
-      : url;
+  const getEmbedUrl = (rawUrl) => {
+    if (!rawUrl) return '';
+    try {
+      if (rawUrl.includes('youtube.com/embed/')) return rawUrl;
+      if (rawUrl.includes('youtube.com/watch')) {
+        const urlObj = new URL(rawUrl);
+        const v = urlObj.searchParams.get('v');
+        return v ? `https://www.youtube.com/embed/${v}?autoplay=1` : rawUrl;
+      }
+      if (rawUrl.includes('youtu.be/')) {
+        const id = rawUrl.split('youtu.be/')[1]?.split('?')[0];
+        return id ? `https://www.youtube.com/embed/${id}?autoplay=1` : rawUrl;
+      }
+      return rawUrl;
+    } catch {
+      return rawUrl;
+    }
+  };
+
+  const embedUrl = getEmbedUrl(url);
 
   return (
     <Modal open={open} onClose={onClose} wide>

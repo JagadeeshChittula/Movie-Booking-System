@@ -152,8 +152,10 @@ const deleteScreen = async (req, res) => {
   try {
 
     const screen =
-      await Screen.findByIdAndDelete(
-        req.params.id
+      await Screen.findByIdAndUpdate(
+        req.params.id,
+        { isActive: false },
+        { new: true }
       );
 
     if (!screen) {
@@ -181,7 +183,7 @@ const deleteScreen = async (req, res) => {
 const getAllScreens = async (req, res) => {
   try {
 
-    const screens = await Screen.find()
+    const screens = await Screen.find({ isActive: true })
       .populate("theatre", "name city");
 
     res.status(200).json({

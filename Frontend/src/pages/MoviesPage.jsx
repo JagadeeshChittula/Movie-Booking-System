@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { movieApi } from '../api/services';
 import MovieCard from '../components/movie/MovieCard';
+import TrailerModal from '../components/movie/TrailerModal';
 import Loader from '../components/ui/Loader';
 import EmptyState from '../components/ui/EmptyState';
 import { getCity } from '../utils/storage';
@@ -10,10 +11,18 @@ export default function MoviesPage() {
   const [searchParams] = useSearchParams();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentCity, setCurrentCity] = useState(getCity);
+  const [trailer, setTrailer] = useState(null);
   const [genre, setGenre] = useState('all');
   const [language, setLanguage] = useState('all');
   const [sort, setSort] = useState('rating');
   const query = searchParams.get('q')?.toLowerCase() || '';
+
+  useEffect(() => {
+    const handleCityChange = (e) => setCurrentCity(e.detail);
+    window.addEventListener('citychange', handleCityChange);
+    return () => window.removeEventListener('citychange', handleCityChange);
+  }, []);
 
   useEffect(() => {
     movieApi
@@ -56,7 +65,7 @@ export default function MoviesPage() {
   return (
     <div className="container">
       <header className="page-header">
-        <h1>Movies in {getCity()}</h1>
+        <h1>Movies in {currentCity}</h1>
         <p>{filtered.length} titles available</p>
       </header>
 
@@ -91,10 +100,12 @@ export default function MoviesPage() {
       ) : (
         <div className="movie-grid" style={{ marginBottom: '3rem' }}>
           {filtered.map((m) => (
-            <MovieCard key={m._id} movie={m} />
+            <MovieCard key={m._id} movie={m} onTrailer={() => setTrailer(m)} />
           ))}
         </div>
       )}
+
+      <TrailerModal open={!!trailer} onClose={() => setTrailer(null)} url={trailer?.trailerUrl} />
     </div>
   );
 }

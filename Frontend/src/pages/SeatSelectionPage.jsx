@@ -1,5 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { io } from 'socket.io-client';
+import { Zap } from 'lucide-react';
 import { showApi, seatLockApi } from '../api/services';
 import SeatMap from '../components/booking/SeatMap';
 import Loader from '../components/ui/Loader';
@@ -8,6 +10,8 @@ import { useSeatLockTimer } from '../hooks/useSeatLockTimer';
 import { formatCurrency, formatDate, formatTime } from '../utils/format';
 import { generateSeatIds, getSeatTier, getSeatPriceMultiplier, parseSeatRow } from '../utils/seats';
 import { saveCheckout } from '../utils/storage';
+
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 export default function SeatSelectionPage() {
   const { showId } = useParams();
@@ -27,12 +31,12 @@ export default function SeatSelectionPage() {
 
   const { formatted, expired } = useSeatLockTimer(lock?.expiresAt);
 
-  const loadSeats = () => {
+  const loadSeats = useCallback(() => {
     showApi.getSeats(showId).then(({ data }) => {
       setBookedSeats(data.bookedSeats || []);
       setLockedSeats(data.lockedSeats || []);
     });
-  };
+  }, [showId]);
 
   useEffect(() => {
     showApi
@@ -40,10 +44,44 @@ export default function SeatSelectionPage() {
       .then(({ data }) => setShow(data.show))
       .catch(() => toast.error('Show not found'))
       .finally(() => setLoading(false));
+
     loadSeats();
-    const interval = setInterval(loadSeats, 15000);
-    return () => clearInterval(interval);
-  }, [showId, toast]);
+
+    // Establish real-time WebSocket connection
+    const socket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+    });
+
+    socket.emit('join_show', showId);
+
+    socket.on('seat_locked', (payload) => {
+      if (String(payload.show) === String(showId)) {
+        setLockedSeats((prev) => [...new Set([...prev, ...payload.seats])]);
+      }
+    });
+
+    socket.on('seat_released', (payload) => {
+      if (String(payload.show) === String(showId)) {
+        setLockedSeats((prev) => prev.filter((s) => !payload.seats.includes(s)));
+      }
+    });
+
+    socket.on('seat_booked', (payload) => {
+      if (String(payload.show) === String(showId)) {
+        setBookedSeats((prev) => [...new Set([...prev, ...payload.seats])]);
+        setLockedSeats((prev) => prev.filter((s) => !payload.seats.includes(s)));
+      }
+    });
+
+    // Background sync fallback every 30s
+    const interval = setInterval(loadSeats, 30000);
+
+    return () => {
+      clearInterval(interval);
+      socket.emit('leave_show', showId);
+      socket.disconnect();
+    };
+  }, [showId, toast, loadSeats]);
 
   const pricing = useMemo(() => {
     const allIds = generateSeatIds(rows, cols);
@@ -108,7 +146,12 @@ export default function SeatSelectionPage() {
           <Link to={`/movies/${show.movie?._id || show.movie}`}>{show.movie?.title}</Link>
           {' · '}{show.theatre?.name}
         </p>
-        <h1>Select Seats</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h1>Select Seats</h1>
+          <span className="badge badge--success" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}>
+            <Zap size={13} /> Live Seat Sync Active
+          </span>
+        </div>
         <p>
           {formatDate(show.showDate)} · {formatTime(show.startTime)} · {show.screen?.name} ({show.screen?.screenType})
         </p>
@@ -160,7 +203,7 @@ export default function SeatSelectionPage() {
             {locking ? 'Locking seats…' : 'Proceed to Pay'}
           </button>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.75rem', textAlign: 'center' }}>
-            Seats reserved for 60 seconds after you continue
+            Seats held for 5 minutes in real-time after you continue
           </p>
         </aside>
       </div>

@@ -55,4 +55,7 @@ const showSchema = new mongoose.Schema(
   }
 );
 
+showSchema.index({ movie: 1, showDate: 1, isActive: 1 });
+showSchema.index({ theatre: 1, showDate: 1, isActive: 1 });
+
 module.exports = mongoose.model("Show", showSchema);

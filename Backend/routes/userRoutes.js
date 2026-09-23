@@ -22,6 +22,4 @@ router.put("/block/:id",protect,adminOnly,blockUser);
 
 router.put("/unblock/:id",protect,adminOnly,unblockUser);
 
-router.get("/profile",protect,getProfile);
-
-module.exports = router;
+module.exports = router;

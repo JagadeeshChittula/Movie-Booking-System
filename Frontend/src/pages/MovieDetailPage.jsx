@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Star, Calendar, Globe, Clock, Ticket } from 'lucide-react';
 import { movieApi, showApi } from '../api/services';
@@ -75,6 +75,14 @@ export default function MovieDetailPage() {
           alt={movie.title}
           className="movie-detail__poster"
           onError={(e) => {
+            if (movie.trailerUrl && !e.target.dataset.fallbackTried) {
+              e.target.dataset.fallbackTried = 'true';
+              const match = movie.trailerUrl.match(/(?:v=|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+              if (match) {
+                e.target.src = `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+                return;
+              }
+            }
             e.target.src = 'https://placehold.co/400x600/16161f/9b9bb0?text=Movie';
           }}
         />

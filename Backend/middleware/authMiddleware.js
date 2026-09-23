@@ -30,6 +30,20 @@ const protect = async (req, res, next) => {
         decoded.id
       ).select("-password");
 
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: "User no longer exists",
+        });
+      }
+
+      if (req.user.isBlocked) {
+        return res.status(403).json({
+          success: false,
+          message: "Account is blocked. Please contact support.",
+        });
+      }
+
       next();
 
     } else {

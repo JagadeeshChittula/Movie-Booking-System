@@ -107,6 +107,13 @@ const loginUser = async (req, res) => {
       });
     }
 
+    if (user.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is blocked. Please contact support.",
+      });
+    }
+
     // Compare password
     const isMatch = await bcrypt.compare(
       password,

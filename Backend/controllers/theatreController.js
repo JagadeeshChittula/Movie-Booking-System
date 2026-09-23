@@ -120,8 +120,10 @@ const getSingleTheatre = async (
 const deleteTheatre = async (req, res) => {
   try {
 
-    const theatre = await Theatre.findByIdAndDelete(
-      req.params.id
+    const theatre = await Theatre.findByIdAndUpdate(
+      req.params.id,
+      { isActive: false },
+      { new: true }
     );
 
     if (!theatre) {

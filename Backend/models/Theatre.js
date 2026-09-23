@@ -38,4 +38,6 @@ const theatreSchema = new mongoose.Schema(
   }
 );
 
+theatreSchema.index({ city: 1, isActive: 1 });
+
 module.exports = mongoose.model("Theatre", theatreSchema);

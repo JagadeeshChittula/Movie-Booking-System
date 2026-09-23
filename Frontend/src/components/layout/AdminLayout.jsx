@@ -7,12 +7,14 @@ import {
   Calendar,
   Ticket,
   Users,
+  QrCode,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from './Navbar';
 
 const links = [
   { to: '/admin', end: true, icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/admin/scanner', icon: QrCode, label: 'Gate Scanner' },
   { to: '/admin/movies', icon: Film, label: 'Movies' },
   { to: '/admin/theatres', icon: Building2, label: 'Theatres' },
   { to: '/admin/screens', icon: Monitor, label: 'Screens' },

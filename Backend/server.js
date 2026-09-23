@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 
 const cors = require("cors");
 
@@ -30,7 +31,30 @@ const dashboardRoutes =require("./routes/dashboardRoutes");
 
 const paymentRoutes =require("./routes/paymentRoutes");
 
+const http = require("http");
+const { Server } = require("socket.io");
+
 const app = express();
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  },
+});
+
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  socket.on("join_show", (showId) => {
+    socket.join(String(showId));
+  });
+
+  socket.on("leave_show", (showId) => {
+    socket.leave(String(showId));
+  });
+});
 
 // Connect Database
 connectDB();
@@ -39,6 +63,9 @@ connectDB();
 app.use(cors());
 
 app.use(express.json());
+
+// Serve static posters
+app.use("/posters", express.static(path.join(__dirname, "public/posters")));
 
 // Routes
 app.use("/auth", authRoutes);
@@ -70,11 +97,13 @@ app.use("/payments",paymentRoutes);
 
 
 
+const PORT = process.env.PORT || 4000;
+
 setInterval(() => {
-  clearExpiredLocks();
+  clearExpiredLocks(io);
 }, 60000);
 
 // Server
-app.listen(4000, () => {
-  console.log("server is started");
+server.listen(PORT, () => {
+  console.log(`server is started with Socket.io on port ${PORT}`);
 });

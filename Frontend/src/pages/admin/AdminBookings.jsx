@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { bookingApi } from '../../api/services';
 import Loader from '../../components/ui/Loader';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatCurrency } from '../../utils/format';
 
 export default function AdminBookings() {
   const [bookings, setBookings] = useState([]);

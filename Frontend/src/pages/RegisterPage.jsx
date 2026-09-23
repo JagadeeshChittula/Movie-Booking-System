@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -11,6 +11,8 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/movies';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +24,7 @@ export default function RegisterPage() {
     try {
       await register(name, email, password);
       toast.success('Account created!');
-      navigate('/movies', { replace: true });
+      navigate(from, { replace: true });
     } catch (err) {
       toast.error(err.message);
     } finally {

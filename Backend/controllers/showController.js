@@ -157,8 +157,10 @@ const deleteShow = async (req, res) => {
   try {
 
     const show =
-      await Show.findByIdAndDelete(
-        req.params.id
+      await Show.findByIdAndUpdate(
+        req.params.id,
+        { isActive: false },
+        { new: true }
       );
 
     if (!show) {

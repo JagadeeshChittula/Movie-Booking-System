@@ -45,7 +45,7 @@ export default function HomePage() {
                 Premium Experience
               </h2>
               <p style={{ color: 'var(--text-muted)', marginTop: '0.35rem', fontSize: '0.9rem' }}>
-                Interactive seat maps · 60s seat hold · Instant confirmation
+                Interactive seat maps · 5-minute real-time seat hold · Instant confirmation
               </p>
             </div>
             <Link to="/movies" className="btn btn--gold">Explore All Movies</Link>
@@ -59,7 +59,7 @@ export default function HomePage() {
             </div>
             <div className="movie-grid">
               {watchlist.map((m) => (
-                <MovieCard key={m._id} movie={m} />
+                <MovieCard key={m._id} movie={m} onTrailer={() => setTrailer(m)} />
               ))}
             </div>
           </section>
@@ -75,7 +75,7 @@ export default function HomePage() {
           </div>
           <div className="movie-grid">
             {trending.map((m) => (
-              <MovieCard key={m._id} movie={m} />
+              <MovieCard key={m._id} movie={m} onTrailer={() => setTrailer(m)} />
             ))}
           </div>
         </section>
@@ -89,7 +89,7 @@ export default function HomePage() {
           </div>
           <div className="movie-grid">
             {newest.map((m) => (
-              <MovieCard key={m._id} movie={m} />
+              <MovieCard key={m._id} movie={m} onTrailer={() => setTrailer(m)} />
             ))}
           </div>
         </section>

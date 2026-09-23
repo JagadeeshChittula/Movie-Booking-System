@@ -1,27 +1,23 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 import { authApi } from '../api/services';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const savedToken = localStorage.getItem('cinevault_token');
-    const savedUser = localStorage.getItem('cinevault_user');
-    if (savedToken && savedUser) {
+  const [token, setToken] = useState(() => localStorage.getItem('cinevault_token') || null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('cinevault_user');
+    if (saved) {
       try {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
+        return JSON.parse(saved);
       } catch {
-        localStorage.removeItem('cinevault_token');
         localStorage.removeItem('cinevault_user');
+        localStorage.removeItem('cinevault_token');
       }
     }
-    setLoading(false);
-  }, []);
+    return null;
+  });
+  const [loading] = useState(false);
 
   const persist = useCallback((data) => {
     const t = data.token;

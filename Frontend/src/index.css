@@ -711,6 +711,29 @@ ul {
   color: #fff;
 }
 
+.movie-card__play {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(229, 9, 20, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: transform 0.2s, background 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  z-index: 2;
+}
+
+.movie-card__play:hover {
+  transform: scale(1.15);
+  background: #ff1e27;
+}
+
 .movie-card__poster-wrap {
   position: relative;
   overflow: hidden;

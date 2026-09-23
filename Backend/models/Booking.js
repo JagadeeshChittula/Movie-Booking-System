@@ -63,6 +63,42 @@ const bookingSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Food & Beverage Concessions
+    snacks: [
+      {
+        id: String,
+        name: String,
+        quantity: Number,
+        price: Number,
+      },
+    ],
+
+    snackTotal: {
+      type: Number,
+      default: 0,
+    },
+
+    // Discount & Promotion
+    discount: {
+      type: Number,
+      default: 0,
+    },
+
+    couponCode: {
+      type: String,
+      default: "",
+    },
+
+    // Gatekeeper & Usher Validation
+    isCheckedIn: {
+      type: Boolean,
+      default: false,
+    },
+
+    checkedInAt: {
+      type: Date,
+    },
+
     // When booking was cancelled
     cancelledAt: {
       type: Date,

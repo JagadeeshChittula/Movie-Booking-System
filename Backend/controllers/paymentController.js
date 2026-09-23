@@ -1,6 +1,5 @@
 const Payment = require("../models/Payment");
 const Booking = require("../models/Booking");
-const confirmBooking =require("./bookingController");
 const createPayment = async (
   req,
   res
@@ -160,8 +159,6 @@ const paymentSuccess = async (
       booking.paymentStatus ="paid";
 
       booking.bookingStatus ="confirmed";
-
-      booking.bookingStatus = "cancelled";
 
       await booking.save();
 

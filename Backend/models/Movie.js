@@ -57,4 +57,7 @@ const movieSchema = new mongoose.Schema(
   }
 );
 
+movieSchema.index({ isActive: 1, releaseDate: -1 });
+movieSchema.index({ title: 1 });
+
 module.exports = mongoose.model("Movie", movieSchema);

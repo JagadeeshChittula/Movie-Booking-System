@@ -5,7 +5,23 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { getCity, setCity } from '../../utils/storage';
 
-const CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune'];
+const CITIES = [
+  'Visakhapatnam',
+  'Vizianagaram',
+  'Srikakulam',
+  'Vijayawada',
+  'Guntur',
+  'Hyderabad',
+  'Tirupati',
+  'Rajahmundry',
+  'Kakinada',
+  'Nellore',
+  'Kurnool',
+  'Bengaluru',
+  'Chennai',
+  'Mumbai',
+  'Delhi',
+];
 
 export default function Navbar({ onSearch }) {
   const { isAuthenticated, user, logout, isAdmin } = useAuth();

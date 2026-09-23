@@ -42,6 +42,7 @@ export const showApi = {
 export const seatLockApi = {
   lock: (data) => client.post('/seat-lock/lock', data),
   release: (data) => client.post('/seat-lock/release', data),
+  extend: (data) => client.post('/seat-lock/extend', data),
 };
 
 export const bookingApi = {
@@ -50,6 +51,7 @@ export const bookingApi = {
   getOne: (id) => client.get(`/bookings/${id}`),
   confirm: (id) => client.put(`/bookings/confirm/${id}`),
   cancel: (id) => client.put(`/bookings/cancel/${id}`),
+  checkIn: (id) => client.put(`/bookings/check-in/${id}`),
   getAllAdmin: () => client.get('/bookings/admin/all'),
 };
 
