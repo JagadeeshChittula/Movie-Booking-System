@@ -167,6 +167,10 @@ export default function SeatSelectionPage() {
         <SeatMap
           rows={rows}
           cols={cols}
+          screenType={show.screen?.screenType || '2D'}
+          screenName={show.screen?.name || 'Screen 1'}
+          theatreName={show.theatre?.name || 'Cinema'}
+          basePrice={basePrice}
           bookedSeats={bookedSeats}
           lockedSeats={lockedSeats.filter((s) => !selected.includes(s))}
           selected={selected}

@@ -945,49 +945,92 @@ ul {
 }
 
 .seat {
-  width: 28px;
-  height: 26px;
-  border-radius: 6px 6px 4px 4px;
-  font-size: 0.55rem;
+  width: 32px;
+  height: 30px;
+  border-radius: 7px 7px 4px 4px;
+  font-size: 0.6rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  transition: transform 0.15s, background 0.15s;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
 }
 
 .seat--regular {
   background: var(--bg-hover);
-  border-color: var(--border);
+  border-color: var(--border-strong);
+  color: var(--text-muted);
 }
 
 .seat--executive {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: var(--executive);
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #93c5fd;
 }
 
 .seat--premium {
-  background: rgba(168, 85, 247, 0.2);
-  border-color: var(--premium);
+  background: rgba(212, 168, 83, 0.18);
+  border-color: rgba(212, 168, 83, 0.5);
+  color: #fde68a;
 }
 
-.seat--booked,
-.seat--locked {
-  background: var(--text-dim);
+.seat--booked {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
   opacity: 0.35;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+.seat--locked {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: rgba(245, 158, 11, 0.6);
+  color: var(--warning);
+  cursor: not-allowed;
+  animation: pulseLock 1.5s infinite;
+}
+
+@keyframes pulseLock {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.4; }
 }
 
 .seat--selected {
   background: var(--accent) !important;
-  border-color: var(--accent) !important;
-  color: #fff;
-  transform: scale(1.1);
+  border-color: #ff4d52 !important;
+  color: #ffffff !important;
+  transform: scale(1.14);
+  box-shadow: 0 0 16px var(--accent-glow), 0 4px 8px rgba(0, 0, 0, 0.4);
+  z-index: 2;
 }
 
 .seat:not(.seat--booked):not(.seat--locked):hover {
-  transform: scale(1.08);
+  transform: scale(1.12);
   border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.35);
+}
+
+.rotating {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.show-time-pill {
+  transition: all 0.2s ease;
+  background: var(--bg-card);
+}
+
+.show-time-pill:hover {
+  border-color: var(--accent) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.2);
 }
 
 .seat-legend {

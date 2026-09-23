@@ -21,7 +21,14 @@ export default function MovieDetailPage() {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedShow, setSelectedShow] = useState(null);
   const [trailerOpen, setTrailerOpen] = useState(false);
-  const city = getCity();
+  const [currentCity, setCurrentCity] = useState(getCity);
+  const [allShowsForMovie, setAllShowsForMovie] = useState([]);
+
+  useEffect(() => {
+    const handleCitySync = (e) => setCurrentCity(e.detail);
+    window.addEventListener('citychange', handleCitySync);
+    return () => window.removeEventListener('citychange', handleCitySync);
+  }, []);
 
   useEffect(() => {
     Promise.all([movieApi.getOne(id), showApi.getAll()])
@@ -31,18 +38,39 @@ export default function MovieDetailPage() {
         const forMovie = all.filter(
           (s) => (s.movie?._id || s.movie) === id && s.isActive !== false
         );
-        const inCity = forMovie.filter(
-          (s) => !s.theatre?.city || s.theatre.city.toLowerCase() === city.toLowerCase()
-        );
-        setShows(inCity.length ? inCity : forMovie);
-        const dates = [...new Set(inCity.map((s) => new Date(s.showDate).toDateString()))].sort(
-          (a, b) => new Date(a) - new Date(b)
-        );
-        if (dates[0]) setSelectedDate(dates[0]);
+        setAllShowsForMovie(forMovie);
       })
       .catch(() => toast?.error?.('Failed to load movie'))
       .finally(() => setLoading(false));
-  }, [id, city, toast]);
+  }, [id, toast]);
+
+  // Filter shows for active currentCity
+  useEffect(() => {
+    const inCity = allShowsForMovie.filter(
+      (s) => s.theatre?.city?.toLowerCase().trim() === currentCity.toLowerCase().trim()
+    );
+    setShows(inCity);
+    const dates = [...new Set(inCity.map((s) => new Date(s.showDate).toDateString()))].sort(
+      (a, b) => new Date(a) - new Date(b)
+    );
+    if (dates.length > 0) {
+      setSelectedDate(dates[0]);
+    } else {
+      setSelectedDate('');
+    }
+    setSelectedShow(null);
+  }, [allShowsForMovie, currentCity]);
+
+  // Cities where shows exist
+  const otherCities = [...new Set(allShowsForMovie.map((s) => s.theatre?.city).filter(Boolean))].filter(
+    (c) => c.toLowerCase() !== currentCity.toLowerCase()
+  );
+
+  const handleSwitchCity = (newCity) => {
+    setCity(newCity);
+    setCurrentCity(newCity);
+    window.dispatchEvent(new CustomEvent('citychange', { detail: newCity }));
+  };
 
   const handleProceed = () => {
     if (!isAuthenticated) {
@@ -118,11 +146,34 @@ export default function MovieDetailPage() {
       </div>
 
       <section className="section">
-        <h2 className="section__title" style={{ marginBottom: '1rem' }}>Select Showtime — {city}</h2>
+        <h2 className="section__title" style={{ marginBottom: '1rem' }}>
+          Select Showtime — {currentCity}
+        </h2>
         {shows.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>
-            No shows scheduled for this movie in {city}. Try another city from the header.
-          </p>
+          <div className="glass" style={{ padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+            <p style={{ color: 'var(--text-muted)', marginBottom: otherCities.length > 0 ? '1rem' : 0 }}>
+              No active shows scheduled for <strong>{movie.title}</strong> in <strong>{currentCity}</strong> right now.
+            </p>
+            {otherCities.length > 0 && (
+              <div>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)', display: 'block', marginBottom: '0.5rem' }}>
+                  Shows currently available in these cities:
+                </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {otherCities.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className="btn btn--sm btn--secondary"
+                      onClick={() => handleSwitchCity(c)}
+                    >
+                      Switch to {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <>
             <ShowTimePicker
