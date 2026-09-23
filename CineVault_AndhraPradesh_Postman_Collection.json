@@ -116,6 +116,58 @@
               ]
             }
           }
+        },
+        {
+          "name": "Forgot Password (Request 6-Digit Code)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jagadeesh@gmail.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/forgot-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reset Password (Verify Code & Update Password)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jagadeesh@gmail.com\",\n  \"resetCode\": \"813898\",\n  \"newPassword\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/reset-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            }
+          }
         }
       ]
     },
@@ -155,6 +207,66 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"title\": \"Devara: Part 1\",\n  \"description\": \"An epic action saga set against the coastal backdrop.\",\n  \"duration\": 178,\n  \"language\": \"Telugu\",\n  \"genre\": [\"Action\", \"Drama\", \"Thriller\"],\n  \"releaseDate\": \"2024-09-27\",\n  \"posterUrl\": \"https://image.tmdb.org/t/p/w500/A7O5Z2oM22J8tSflJjR69s8bZ5M.jpg\",\n  \"trailerUrl\": \"https://www.youtube.com/watch?v=kYfn7Wj7s1Q\",\n  \"rating\": 8.4\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/movies/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "movies",
+                "add"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add 2026 Blockbuster (Salaar: Part 2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Salaar: Part 2 – Shouryaanga Parvam\",\n  \"description\": \"The titanic conflict erupts between Deva and Varadha in Khansaar.\",\n  \"duration\": 178,\n  \"language\": \"Telugu\",\n  \"genre\": [\"Action\", \"Epic\", \"Crime\"],\n  \"releaseDate\": \"2026-08-14\",\n  \"posterUrl\": \"/posters/salaar-part-2.jpg\",\n  \"trailerUrl\": \"https://www.youtube.com/watch?v=4GPvYMKtrtI\",\n  \"rating\": 9.2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/movies/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "movies",
+                "add"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add 2026 Blockbuster (Avengers: Doomsday)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Avengers: Doomsday\",\n  \"description\": \"Earth mightiest heroes face Doctor Doom across the multiverse.\",\n  \"duration\": 182,\n  \"language\": \"English\",\n  \"genre\": [\"Action\", \"Sci-Fi\", \"Superhero\"],\n  \"releaseDate\": \"2026-05-01\",\n  \"posterUrl\": \"/posters/avengers-doomsday.jpg\",\n  \"trailerUrl\": \"https://www.youtube.com/watch?v=YoHD9XEInc0\",\n  \"rating\": 9.4\n}"
             },
             "url": {
               "raw": "{{base_url}}/movies/add",
