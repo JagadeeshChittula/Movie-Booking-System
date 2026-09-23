@@ -92,9 +92,9 @@ All requested features have been implemented, tested, verified, and pushed to Gi
 - Added **280 new shows** across Srikakulam and AP/Telangana theatres for these 2026 movies.
 - All movie posters stored locally in `Frontend/public/posters/` and `Backend/public/posters/` with verified working trailers.
 - Updated `CineVault_AndhraPradesh_Postman_Collection.json` with new requests for Forgot Password, Reset Password, and 2026 blockbusters.
-- Total Movies: **134 movies**
+- Total Movies: **299 movies**
 - Total Theatres: **91 theatres**
-- Total Shows: **778 shows**
+- Total Shows: **943 shows**
 
 ---
 
