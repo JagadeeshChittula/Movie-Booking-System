@@ -31,6 +31,27 @@ const addShow = async (req, res) => {
       });
     }
 
+    // Check if the screen is already occupied on this date and start time
+    const targetDate = new Date(showDate);
+    const startOfDay = new Date(targetDate);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const existingShow = await Show.findOne({
+      screen,
+      showDate: { $gte: startOfDay, $lte: endOfDay },
+      startTime: startTime.trim(),
+      isActive: true,
+    });
+    if (existingShow) {
+      return res.status(409).json({
+        success: false,
+        message: `A show is already scheduled on this screen at ${startTime} on this date`,
+        show: existingShow,
+      });
+    }
+
     const show = await Show.create({
       movie,
       theatre,

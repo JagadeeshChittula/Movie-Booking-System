@@ -26,6 +26,20 @@ const addTheatre = async (req, res) => {
       });
     }
 
+    // Check for duplicate theatre with same name in same city
+    const existingTheatre = await Theatre.findOne({
+      name: { $regex: new RegExp(`^${name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") },
+      city: { $regex: new RegExp(`^${city.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") },
+      isActive: true,
+    });
+    if (existingTheatre) {
+      return res.status(409).json({
+        success: false,
+        message: "A theatre with this name already exists in this city",
+        theatre: existingTheatre,
+      });
+    }
+
     const theatre =
       await Theatre.create({
         name,

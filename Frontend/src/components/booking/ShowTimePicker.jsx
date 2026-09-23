@@ -54,22 +54,35 @@ export default function ShowTimePicker({
             <h3>{theatre?.name}</h3>
             <p>{theatre?.address} · {theatre?.city}</p>
             <div className="show-times">
-              {theatreShows.map((show) => {
-                const soldOut =
-                  show.screen?.totalSeats &&
-                  show.bookedSeats?.length >= show.screen.totalSeats;
-                return (
-                  <button
-                    key={show._id}
-                    type="button"
-                    className={`show-time-btn ${selectedShow?._id === show._id ? 'active' : ''}`}
-                    onClick={() => onShowSelect(show)}
-                    disabled={soldOut}
-                  >
-                    {formatTime(show.startTime)} · {formatCurrency(show.ticketPrice)}
-                  </button>
-                );
-              })}
+              {[...theatreShows]
+                .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+                .map((show) => {
+                  const soldOut =
+                    show.screen?.totalSeats &&
+                    show.bookedSeats?.length >= show.screen.totalSeats;
+                  return (
+                    <button
+                      key={show._id}
+                      type="button"
+                      className={`show-time-btn ${selectedShow?._id === show._id ? 'active' : ''}`}
+                      onClick={() => onShowSelect(show)}
+                      disabled={soldOut}
+                      style={{
+                        display: 'inline-flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '2px',
+                        padding: '0.5rem 0.85rem',
+                        minWidth: '85px',
+                      }}
+                    >
+                      <span style={{ fontWeight: 600 }}>{formatTime(show.startTime)}</span>
+                      <span style={{ fontSize: '0.7rem', opacity: 0.75, fontWeight: 400 }}>
+                        {show.screen?.name ? `${show.screen.name} · ` : ''}{formatCurrency(show.ticketPrice)}
+                      </span>
+                    </button>
+                  );
+                })}
             </div>
           </div>
         ))

@@ -32,6 +32,7 @@ export default function MoviesPage() {
   const [language, setLanguage] = useState('all');
   const [sort, setSort] = useState('rating');
   const [showAllCatalog, setShowAllCatalog] = useState(false);
+  const [theatreDate, setTheatreDate] = useState('all');
 
   const activeTab = searchParams.get('tab') === 'theatres' ? 'theatres' : 'movies';
   const query = searchParams.get('q')?.toLowerCase() || '';
@@ -80,6 +81,30 @@ export default function MoviesPage() {
     );
   }, [shows, currentCity]);
 
+  // Unique available show dates for city shows
+  const theatreDateOptions = useMemo(() => {
+    const map = new Map();
+    cityShows.forEach((s) => {
+      if (!s.showDate) return;
+      const d = new Date(s.showDate);
+      const key = d.toDateString();
+      if (!map.has(key)) {
+        map.set(key, d);
+      }
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => a[1] - b[1])
+      .map(([dateStr, dateObj]) => ({ dateStr, dateObj }));
+  }, [cityShows]);
+
+  // Shows filtered by selected theatre date
+  const filteredCityShowsForTheatres = useMemo(() => {
+    if (theatreDate === 'all') return cityShows;
+    return cityShows.filter(
+      (s) => s.showDate && new Date(s.showDate).toDateString() === theatreDate
+    );
+  }, [cityShows, theatreDate]);
+
   // Movie IDs that have active shows in the current city
   const movieIdsInCity = useMemo(() => {
     const set = new Set();
@@ -93,13 +118,13 @@ export default function MoviesPage() {
   // Group shows by theatre for the Theatres view
   const theatreShowMap = useMemo(() => {
     const map = {};
-    cityShows.forEach((s) => {
+    filteredCityShowsForTheatres.forEach((s) => {
       const tid = String(s.theatre?._id || s.theatre);
       if (!map[tid]) map[tid] = [];
       map[tid].push(s);
     });
     return map;
-  }, [cityShows]);
+  }, [filteredCityShowsForTheatres]);
 
   // Filtered movies according to city & filter controls
   const filteredMovies = useMemo(() => {
@@ -267,6 +292,62 @@ export default function MoviesPage() {
       {/* ===================== TAB 2: THEATRES VIEW ===================== */}
       {activeTab === 'theatres' && (
         <div style={{ marginBottom: '3rem' }}>
+          {/* Date Selector Tabs for Theatres */}
+          {theatreDateOptions.length > 0 && (
+            <div
+              className="glass"
+              style={{
+                padding: '0.85rem 1.25rem',
+                borderRadius: 'var(--radius)',
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                overflowX: 'auto',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                <Clock size={16} color="var(--accent)" />
+                <span>Show Date:</span>
+              </div>
+              <button
+                type="button"
+                className={`btn btn--sm ${theatreDate === 'all' ? 'btn--primary' : 'btn--ghost'}`}
+                onClick={() => setTheatreDate('all')}
+                style={{ borderRadius: 'var(--radius)', fontSize: '0.82rem', whiteSpace: 'nowrap' }}
+              >
+                All Upcoming Dates
+              </button>
+              {theatreDateOptions.map(({ dateStr, dateObj }) => {
+                const isSelected = theatreDate === dateStr;
+                const isToday = new Date().toDateString() === dateStr;
+                const weekday = dateObj.toLocaleDateString('en-IN', { weekday: 'short' });
+                const dayNum = dateObj.getDate();
+                const month = dateObj.toLocaleDateString('en-IN', { month: 'short' });
+
+                return (
+                  <button
+                    key={dateStr}
+                    type="button"
+                    className={`btn btn--sm ${isSelected ? 'btn--primary' : 'btn--secondary'}`}
+                    onClick={() => setTheatreDate(dateStr)}
+                    style={{
+                      borderRadius: 'var(--radius)',
+                      fontSize: '0.82rem',
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <span>{isToday ? 'Today' : weekday}, {dayNum} {month}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {cityTheatres.length === 0 ? (
             <EmptyState
               title={`No theatres registered in ${currentCity}`}
@@ -325,75 +406,91 @@ export default function MoviesPage() {
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
                       {moviesRunning.length === 0 ? (
                         <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>
-                          No active shows scheduled for today at this theatre. Check back soon!
+                          {theatreDate === 'all'
+                            ? 'No active shows scheduled at this theatre.'
+                            : `No active shows scheduled for ${theatreDate} at this theatre.`}
                         </p>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                          {moviesRunning.map(({ movie, shows: mShows }) => (
-                            <div
-                              key={movie._id || movie}
-                              style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'minmax(180px, 260px) 1fr',
-                                gap: '1rem',
-                                alignItems: 'center',
-                                padding: '0.75rem',
-                                background: 'rgba(255,255,255,0.02)',
-                                borderRadius: 'var(--radius)',
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <img
-                                  src={movie.posterUrl}
-                                  alt={movie.title}
-                                  style={{ width: 44, height: 60, objectFit: 'cover', borderRadius: 4 }}
-                                  onError={(e) => {
-                                    e.target.src = 'https://placehold.co/100x150/16161f/9b9bb0?text=Film';
-                                  }}
-                                />
-                                <div>
-                                  <Link
-                                    to={`/movies/${movie._id || movie}`}
-                                    style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text)' }}
-                                    className="hover-underline"
-                                  >
-                                    {movie.title}
-                                  </Link>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                                    {movie.language} · {movie.genre?.slice(0, 2).join(', ')}
+                          {moviesRunning.map(({ movie, shows: mShows }) => {
+                            const sortedShows = [...mShows].sort((a, b) => {
+                              const dComp = new Date(a.showDate) - new Date(b.showDate);
+                              if (dComp !== 0) return dComp;
+                              return (a.startTime || '').localeCompare(b.startTime || '');
+                            });
+
+                            return (
+                              <div
+                                key={movie._id || movie}
+                                style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: 'minmax(180px, 260px) 1fr',
+                                  gap: '1rem',
+                                  alignItems: 'center',
+                                  padding: '0.75rem',
+                                  background: 'rgba(255,255,255,0.02)',
+                                  borderRadius: 'var(--radius)',
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                  <img
+                                    src={movie.posterUrl}
+                                    alt={movie.title}
+                                    style={{ width: 44, height: 60, objectFit: 'cover', borderRadius: 4 }}
+                                    onError={(e) => {
+                                      e.target.src = 'https://placehold.co/100x150/16161f/9b9bb0?text=Film';
+                                    }}
+                                  />
+                                  <div>
+                                    <Link
+                                      to={`/movies/${movie._id || movie}`}
+                                      style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text)' }}
+                                      className="hover-underline"
+                                    >
+                                      {movie.title}
+                                    </Link>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                      {movie.language} · {movie.genre?.slice(0, 2).join(', ')}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
 
-                              {/* Clickable Showtimes */}
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                {mShows.map((s) => (
-                                  <button
-                                    key={s._id}
-                                    type="button"
-                                    className="btn btn--sm show-time-pill"
-                                    onClick={() => navigate(`/book/${s._id}`)}
-                                    title={`Book seats for ${formatTime(s.startTime)} (${s.screen?.name || 'Screen'})`}
-                                    style={{
-                                      border: '1px solid var(--border-strong)',
-                                      borderRadius: 'var(--radius)',
-                                      padding: '0.45rem 0.85rem',
-                                      fontSize: '0.82rem',
-                                      fontWeight: 600,
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      alignItems: 'center',
-                                    }}
-                                  >
-                                    <span>{formatTime(s.startTime)}</span>
-                                    <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: 400 }}>
-                                      {s.screen?.screenType || '2D'} · ₹{s.ticketPrice}
-                                    </span>
-                                  </button>
-                                ))}
+                                {/* Clickable Showtimes */}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                  {sortedShows.map((s) => (
+                                    <button
+                                      key={s._id}
+                                      type="button"
+                                      className="btn btn--sm show-time-pill"
+                                      onClick={() => navigate(`/book/${s._id}`)}
+                                      title={`Book seats for ${formatTime(s.startTime)} (${s.screen?.name || 'Screen'}) on ${new Date(s.showDate).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}`}
+                                      style={{
+                                        border: '1px solid var(--border-strong)',
+                                        borderRadius: 'var(--radius)',
+                                        padding: '0.45rem 0.85rem',
+                                        fontSize: '0.82rem',
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '2px',
+                                      }}
+                                    >
+                                      <span>{formatTime(s.startTime)}</span>
+                                      <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)', fontWeight: 400 }}>
+                                        {s.screen?.name ? `${s.screen.name} · ` : ''}{s.screen?.screenType || '2D'} · ₹{s.ticketPrice}
+                                      </span>
+                                      {theatreDate === 'all' && (
+                                        <span style={{ fontSize: '0.62rem', color: 'var(--accent)', fontWeight: 600, marginTop: '1px' }}>
+                                          {new Date(s.showDate).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                        </span>
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>

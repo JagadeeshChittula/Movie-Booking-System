@@ -27,6 +27,19 @@ const addScreen = async (req, res) => {
       });
     }
 
+    // Check for duplicate screen name in same theatre
+    const existingScreen = await Screen.findOne({
+      theatre,
+      name: { $regex: new RegExp(`^${name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") },
+    });
+    if (existingScreen) {
+      return res.status(409).json({
+        success: false,
+        message: "A screen with this name already exists in this theatre",
+        screen: existingScreen,
+      });
+    }
+
     const screen = await Screen.create({
       theatre,
       name,

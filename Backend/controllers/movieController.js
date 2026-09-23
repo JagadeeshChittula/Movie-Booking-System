@@ -34,6 +34,19 @@ const addMovie = async (req, res) => {
       });
     }
 
+    // Check for duplicate movie title
+    const existingMovie = await Movie.findOne({
+      title: { $regex: new RegExp(`^${title.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") },
+      isActive: true,
+    });
+    if (existingMovie) {
+      return res.status(409).json({
+        success: false,
+        message: "A movie with this title already exists",
+        movie: existingMovie,
+      });
+    }
+
     // Create movie
     const movie = await Movie.create({
       title,
