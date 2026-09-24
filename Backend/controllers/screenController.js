@@ -195,8 +195,8 @@ const deleteScreen = async (req, res) => {
 
 const getAllScreens = async (req, res) => {
   try {
-
-    const screens = await Screen.find({ isActive: true })
+    const filter = req.query.all === "true" || req.query.includeInactive === "true" ? {} : { isActive: true };
+    const screens = await Screen.find(filter)
       .populate("theatre", "name city");
 
     res.status(200).json({

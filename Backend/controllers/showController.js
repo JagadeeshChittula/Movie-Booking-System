@@ -83,10 +83,8 @@ const addShow = async (req, res) => {
 // =============================
 const getAllShows = async (req, res) => {
   try {
-
-    const shows = await Show.find({
-      isActive: true,
-    })
+    const filter = req.query.all === "true" || req.query.includeInactive === "true" ? {} : { isActive: true };
+    const shows = await Show.find(filter)
       .populate("movie")
       .populate("theatre")
       .populate("screen");

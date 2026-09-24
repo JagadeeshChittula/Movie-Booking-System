@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Search, X, MapPin } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, MapPin, Eye, EyeOff } from 'lucide-react';
 import { theatreApi } from '../../api/services';
 import { useToast } from '../../context/ToastContext';
 import Loader from '../../components/ui/Loader';
@@ -15,23 +15,47 @@ export default function AdminTheatres() {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(empty);
   const [searchTerm, setSearchTerm] = useState('');
+  const [visibilityFilter, setVisibilityFilter] = useState('all');
 
-  const load = () => theatreApi.getAll().then(({ data }) => setItems(data.theatres || [])).finally(() => setLoading(false));
+  const load = () => theatreApi.getAll({ all: true }).then(({ data }) => setItems(data.theatres || [])).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
+  const handleToggleHide = async (t) => {
+    const isCurrentlyHidden = t.isActive === false;
+    const nextStatus = isCurrentlyHidden ? true : false;
+    try {
+      await theatreApi.update(t._id, { isActive: nextStatus });
+      toast.success(nextStatus ? `"${t.name}" is now visible to public` : `"${t.name}" is now hidden from public`);
+      load();
+    } catch (err) {
+      toast.error(err.message || 'Failed to update visibility');
+    }
+  };
+
   const filteredTheatres = useMemo(() => {
-    if (!searchTerm.trim()) return items;
-    const term = searchTerm.toLowerCase().trim();
-    return items.filter((t) => {
-      const nameMatch = t.name?.toLowerCase().includes(term);
-      const cityMatch = t.city?.toLowerCase().includes(term);
-      const addrMatch = t.address?.toLowerCase().includes(term);
-      const facMatch = Array.isArray(t.facilities)
-        ? t.facilities.some((f) => f.toLowerCase().includes(term))
-        : t.facilities?.toLowerCase().includes(term);
-      return nameMatch || cityMatch || addrMatch || facMatch;
-    });
-  }, [items, searchTerm]);
+    let list = items;
+
+    if (visibilityFilter === 'visible') {
+      list = list.filter((t) => t.isActive !== false);
+    } else if (visibilityFilter === 'hidden') {
+      list = list.filter((t) => t.isActive === false);
+    }
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      list = list.filter((t) => {
+        const nameMatch = t.name?.toLowerCase().includes(term);
+        const cityMatch = t.city?.toLowerCase().includes(term);
+        const addrMatch = t.address?.toLowerCase().includes(term);
+        const facMatch = Array.isArray(t.facilities)
+          ? t.facilities.some((f) => f.toLowerCase().includes(term))
+          : t.facilities?.toLowerCase().includes(term);
+        return nameMatch || cityMatch || addrMatch || facMatch;
+      });
+    }
+
+    return list;
+  }, [items, searchTerm, visibilityFilter]);
 
   const openAdd = () => {
     setEditId(null);
@@ -86,13 +110,16 @@ export default function AdminTheatres() {
 
   if (loading) return <Loader fullPage />;
 
+  const visibleCount = items.filter((t) => t.isActive !== false).length;
+  const hiddenCount = items.filter((t) => t.isActive === false).length;
+
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem' }}>Theatres</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            Manage cinema properties, locations, and amenities
+            Manage cinema properties, locations, visibility (hide/unhide), and amenities
           </p>
         </div>
         <button type="button" className="btn btn--primary" onClick={openAdd}>
@@ -122,9 +149,37 @@ export default function AdminTheatres() {
             </button>
           )}
         </div>
-        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Showing <strong>{filteredTheatres.length}</strong> of {items.length} theatres
-        </span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {/* Hide/Show Filter Tabs */}
+          <div className="admin-filter-group" title="Filter by visibility">
+            <button
+              type="button"
+              className={`admin-filter-btn ${visibilityFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setVisibilityFilter('all')}
+            >
+              All ({items.length})
+            </button>
+            <button
+              type="button"
+              className={`admin-filter-btn ${visibilityFilter === 'visible' ? 'active' : ''}`}
+              onClick={() => setVisibilityFilter('visible')}
+            >
+              Visible ({visibleCount})
+            </button>
+            <button
+              type="button"
+              className={`admin-filter-btn ${visibilityFilter === 'hidden' ? 'active' : ''}`}
+              onClick={() => setVisibilityFilter('hidden')}
+            >
+              Hidden ({hiddenCount})
+            </button>
+          </div>
+
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            Showing <strong>{filteredTheatres.length}</strong>
+          </span>
+        </div>
       </div>
 
       <div className="data-table-wrap">
@@ -134,66 +189,92 @@ export default function AdminTheatres() {
               <th>Theatre</th>
               <th>City</th>
               <th>Address</th>
+              <th>Status</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredTheatres.length === 0 ? (
               <tr>
-                <td colSpan="4" style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
-                  No theatres matching <strong>"{searchTerm}"</strong>.{' '}
+                <td colSpan="5" style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
+                  No theatres matching current filters.{' '}
                   <button
                     type="button"
                     className="btn btn--ghost btn--sm"
-                    onClick={() => setSearchTerm('')}
+                    onClick={() => { setSearchTerm(''); setVisibilityFilter('all'); }}
                     style={{ textDecoration: 'underline' }}
                   >
-                    Reset search
+                    Reset filters
                   </button>
                 </td>
               </tr>
             ) : (
-              filteredTheatres.map((t) => (
-                <tr key={t._id}>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{t.name}</div>
-                    {t.facilities && t.facilities.length > 0 && (
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: 2 }}>
-                        {Array.isArray(t.facilities) ? t.facilities.slice(0, 3).join(' • ') : t.facilities}
+              filteredTheatres.map((t) => {
+                const isHidden = t.isActive === false;
+                return (
+                  <tr key={t._id} className={isHidden ? 'table-row-hidden' : ''}>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{t.name}</div>
+                      {t.facilities && t.facilities.length > 0 && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: 2 }}>
+                          {Array.isArray(t.facilities) ? t.facilities.slice(0, 3).join(' • ') : t.facilities}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <span className="badge badge--accent">{t.city}</span>
+                    </td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      {t.address}
+                    </td>
+                    <td>
+                      {isHidden ? (
+                        <span className="badge badge--error" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <EyeOff size={11} /> Hidden
+                        </span>
+                      ) : (
+                        <span className="badge badge--success" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <Eye size={11} /> Visible
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        {/* Hide / Unhide Toggle Action */}
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm"
+                          onClick={() => handleToggleHide(t)}
+                          title={isHidden ? 'Unhide theatre (Make visible to users)' : 'Hide theatre (Hide from public)'}
+                          aria-label={isHidden ? 'Unhide theatre' : 'Hide theatre'}
+                          style={{ color: isHidden ? 'var(--gold)' : 'var(--text-muted)' }}
+                        >
+                          {isHidden ? <Eye size={15} /> : <EyeOff size={15} />}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm"
+                          onClick={() => openEdit(t)}
+                          title={`Edit ${t.name}`}
+                          aria-label={`Edit ${t.name}`}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm"
+                          onClick={() => handleDelete(t._id)}
+                          title={`Delete ${t.name}`}
+                          aria-label={`Delete ${t.name}`}
+                          style={{ color: 'var(--error)' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                    )}
-                  </td>
-                  <td>
-                    <span className="badge badge--accent">{t.city}</span>
-                  </td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    {t.address}
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                      <button
-                        type="button"
-                        className="btn btn--ghost btn--sm"
-                        onClick={() => openEdit(t)}
-                        title={`Edit ${t.name}`}
-                        aria-label={`Edit ${t.name}`}
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn--ghost btn--sm"
-                        onClick={() => handleDelete(t._id)}
-                        title={`Delete ${t.name}`}
-                        aria-label={`Delete ${t.name}`}
-                        style={{ color: 'var(--error)' }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

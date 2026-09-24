@@ -8,7 +8,7 @@ export const authApi = {
 };
 
 export const movieApi = {
-  getAll: () => client.get('/movies/all'),
+  getAll: (params) => client.get('/movies/all', { params }),
   getOne: (id) => client.get(`/movies/${id}`),
   add: (data) => client.post('/movies/add', data),
   update: (id, data) => client.put(`/movies/update/${id}`, data),
@@ -16,7 +16,7 @@ export const movieApi = {
 };
 
 export const theatreApi = {
-  getAll: () => client.get('/theatres/all'),
+  getAll: (params) => client.get('/theatres/all', { params }),
   getOne: (id) => client.get(`/theatres/${id}`),
   add: (data) => client.post('/theatres/add', data),
   update: (id, data) => client.put(`/theatres/${id}`, data),
@@ -24,7 +24,7 @@ export const theatreApi = {
 };
 
 export const screenApi = {
-  getAll: () => client.get('/screens/all'),
+  getAll: (params) => client.get('/screens/all', { params }),
   getByTheatre: (theatreId) => client.get(`/screens/theatre/${theatreId}`),
   getOne: (id) => client.get(`/screens/${id}`),
   add: (data) => client.post('/screens/add', data),
@@ -33,7 +33,7 @@ export const screenApi = {
 };
 
 export const showApi = {
-  getAll: () => client.get('/shows/all'),
+  getAll: (params) => client.get('/shows/all', { params }),
   getOne: (id) => client.get(`/shows/${id}`),
   getSeats: (showId) => client.get(`/shows/${showId}/seats`),
   add: (data) => client.post('/shows/add', data),
@@ -66,6 +66,9 @@ export const paymentApi = {
 export const userApi = {
   profile: () => client.get('/users/profile'),
   changePassword: (data) => client.put('/users/change-password', data),
+  getAll: () => client.get('/auth/all-users'),
+  block: (id) => client.put(`/users/block/${id}`),
+  unblock: (id) => client.put(`/users/unblock/${id}`),
 };
 
 export const dashboardApi = {

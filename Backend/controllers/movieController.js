@@ -81,10 +81,8 @@ const addMovie = async (req, res) => {
 // =============================
 const getAllMovies = async (req, res) => {
   try {
-
-    const movies = await Movie.find({
-      isActive: true,
-    });
+    const filter = req.query.all === "true" || req.query.includeInactive === "true" ? {} : { isActive: true };
+    const movies = await Movie.find(filter);
 
     res.status(200).json({
       success: true,

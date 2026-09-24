@@ -68,16 +68,10 @@ const addTheatre = async (req, res) => {
 // =============================
 // GET ALL THEATRES
 // =============================
-const getAllTheatres = async (
-  req,
-  res
-) => {
+const getAllTheatres = async (req, res) => {
   try {
-
-    const theatres =
-      await Theatre.find({
-        isActive: true,
-      });
+    const filter = req.query.all === "true" || req.query.includeInactive === "true" ? {} : { isActive: true };
+    const theatres = await Theatre.find(filter);
 
     res.status(200).json({
       success: true,
