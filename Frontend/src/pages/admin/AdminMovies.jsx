@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Plus, Pencil, Trash2, Search, X, Star } from 'lucide-react';
 import { movieApi } from '../../api/services';
 import { useToast } from '../../context/ToastContext';
 import Loader from '../../components/ui/Loader';
@@ -24,12 +24,27 @@ export default function AdminMovies() {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const load = () => {
     movieApi.getAll().then(({ data }) => setMovies(data.movies || [])).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);
+
+  const filteredMovies = useMemo(() => {
+    if (!searchTerm.trim()) return movies;
+    const term = searchTerm.toLowerCase().trim();
+    return movies.filter((m) => {
+      const titleMatch = m.title?.toLowerCase().includes(term);
+      const langMatch = m.language?.toLowerCase().includes(term);
+      const genreMatch = Array.isArray(m.genre)
+        ? m.genre.some((g) => g.toLowerCase().includes(term))
+        : m.genre?.toLowerCase().includes(term);
+      const ratingMatch = String(m.rating || '').includes(term);
+      return titleMatch || langMatch || genreMatch || ratingMatch;
+    });
+  }, [movies, searchTerm]);
 
   const openAdd = () => {
     setEditId(null);
@@ -85,39 +100,132 @@ export default function AdminMovies() {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1>Movies</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem' }}>Movies</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            Manage catalog titles, edit metadata, and manage show allocations
+          </p>
+        </div>
         <button type="button" className="btn btn--primary" onClick={openAdd}>
           <Plus size={18} /> Add Movie
         </button>
+      </div>
+
+      <div className="admin-toolbar">
+        <div className="admin-search-wrap">
+          <Search className="search-icon" size={17} />
+          <input
+            type="search"
+            placeholder="Search by title, language, genre (e.g. Fauzi, Telugu, Action)…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search movies"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              className="search-clear-btn"
+              onClick={() => setSearchTerm('')}
+              title="Clear search"
+              aria-label="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Showing <strong>{filteredMovies.length}</strong> of {movies.length} movies
+        </span>
       </div>
 
       <div className="data-table-wrap">
         <table className="data-table">
           <thead>
             <tr>
-              <th>Title</th>
+              <th>Movie</th>
               <th>Language</th>
               <th>Rating</th>
-              <th>Actions</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {movies.map((m) => (
-              <tr key={m._id}>
-                <td>{m.title}</td>
-                <td>{m.language}</td>
-                <td>{m.rating}</td>
-                <td style={{ display: 'flex', gap: 8 }}>
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => openEdit(m)}>
-                    <Pencil size={14} />
-                  </button>
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => handleDelete(m._id)}>
-                    <Trash2 size={14} />
+            {filteredMovies.length === 0 ? (
+              <tr>
+                <td colSpan="4" style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
+                  No movies matching <strong>"{searchTerm}"</strong>.{' '}
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => setSearchTerm('')}
+                    style={{ textDecoration: 'underline' }}
+                  >
+                    Reset search
                   </button>
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredMovies.map((m) => (
+                <tr key={m._id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      {m.posterUrl ? (
+                        <img
+                          src={m.posterUrl}
+                          alt={m.title}
+                          style={{
+                            width: 36,
+                            height: 50,
+                            objectFit: 'cover',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border)',
+                            flexShrink: 0,
+                          }}
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : null}
+                      <div>
+                        <div style={{ fontWeight: 600 }}>{m.title}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: 2 }}>
+                          {Array.isArray(m.genre) ? m.genre.slice(0, 3).join(', ') : m.genre}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="badge badge--muted">{m.language}</span>
+                  </td>
+                  <td>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600, color: 'var(--gold)' }}>
+                      <Star size={13} fill="var(--gold)" color="var(--gold)" /> {m.rating}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => openEdit(m)}
+                        title={`Edit ${m.title}`}
+                        aria-label={`Edit ${m.title}`}
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => handleDelete(m._id)}
+                        title={`Delete ${m.title}`}
+                        aria-label={`Delete ${m.title}`}
+                        style={{ color: 'var(--error)' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

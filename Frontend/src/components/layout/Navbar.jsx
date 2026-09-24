@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Search, Sun, Moon, Menu, X, User, LogOut, LayoutDashboard, MapPin, Navigation, Clapperboard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -30,10 +30,20 @@ export default function Navbar({ onSearch }) {
   const { isDark, toggleTheme } = useTheme();
   const toast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [city, setCityState] = useState(getCity);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(searchParams.get('q') || '');
   const [locating, setLocating] = useState(false);
+
+  // Keep query in sync with URL search parameter
+  useEffect(() => {
+    if (location.pathname === '/movies') {
+      const q = searchParams.get('q') || '';
+      setQuery(q);
+    }
+  }, [location.pathname, searchParams]);
 
   useEffect(() => {
     const handleCitySync = (e) => setCityState(e.detail);
@@ -70,10 +80,50 @@ export default function Navbar({ onSearch }) {
     }
   };
 
+  const handleQueryChange = (val) => {
+    setQuery(val);
+    if (onSearch) {
+      onSearch(val);
+      return;
+    }
+
+    if (location.pathname === '/movies') {
+      const next = new URLSearchParams(location.search);
+      if (val.trim()) {
+        next.set('q', val);
+      } else {
+        next.delete('q');
+      }
+      navigate({ pathname: '/movies', search: next.toString() ? `?${next.toString()}` : '' }, { replace: true });
+    } else {
+      if (val.trim()) {
+        navigate(`/movies?q=${encodeURIComponent(val)}`);
+      }
+    }
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    if (onSearch) {
+      onSearch('');
+      return;
+    }
+    if (location.pathname === '/movies') {
+      const next = new URLSearchParams(location.search);
+      next.delete('q');
+      navigate({ pathname: '/movies', search: next.toString() ? `?${next.toString()}` : '' }, { replace: true });
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (onSearch) onSearch(query);
-    else navigate(`/movies?q=${encodeURIComponent(query)}`);
+    else {
+      const next = new URLSearchParams(location.pathname === '/movies' ? location.search : '');
+      if (query.trim()) next.set('q', query);
+      else next.delete('q');
+      navigate({ pathname: '/movies', search: next.toString() ? `?${next.toString()}` : '' }, { replace: location.pathname === '/movies' });
+    }
     setMobileOpen(false);
   };
 
@@ -92,13 +142,24 @@ export default function Navbar({ onSearch }) {
         </Link>
 
         <form className="navbar__search" onSubmit={handleSearch}>
-          <Search />
+          <Search className="navbar__search-icon" />
           <input
             type="search"
-            placeholder="Search movies, genres…"
+            placeholder="Search movies, genres, language…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleQueryChange(e.target.value)}
           />
+          {query && (
+            <button
+              type="button"
+              className="navbar__search-clear"
+              onClick={handleClear}
+              title="Clear search"
+              aria-label="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
         </form>
 
         <nav className="navbar__links">
@@ -178,8 +239,25 @@ export default function Navbar({ onSearch }) {
             <LayoutDashboard size={16} /> Admin
           </NavLink>
         )}
-        <form onSubmit={handleSearch}>
-          <input className="input" placeholder="Search…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <form onSubmit={handleSearch} style={{ position: 'relative', marginTop: '0.5rem' }}>
+          <input
+            className="input"
+            placeholder="Search movies, genres…"
+            value={query}
+            onChange={(e) => handleQueryChange(e.target.value)}
+            style={{ width: '100%', paddingRight: query ? '2.5rem' : '1rem' }}
+          />
+          {query && (
+            <button
+              type="button"
+              className="navbar__search-clear"
+              onClick={handleClear}
+              title="Clear search"
+              aria-label="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
         </form>
       </div>
     </header>

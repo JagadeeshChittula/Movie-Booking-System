@@ -10,6 +10,8 @@ import {
   ChevronRight,
   Filter,
   CheckCircle,
+  Search,
+  X,
 } from 'lucide-react';
 import { movieApi, showApi, theatreApi } from '../api/services';
 import MovieCard from '../components/movie/MovieCard';
@@ -35,7 +37,30 @@ export default function MoviesPage() {
   const [theatreDate, setTheatreDate] = useState('all');
 
   const activeTab = searchParams.get('tab') === 'theatres' ? 'theatres' : 'movies';
-  const query = searchParams.get('q')?.toLowerCase() || '';
+  const query = searchParams.get('q')?.toLowerCase().trim() || '';
+  const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
+
+  useEffect(() => {
+    setSearchInput(searchParams.get('q') || '');
+  }, [searchParams]);
+
+  const handleSearchChange = (val) => {
+    setSearchInput(val);
+    const next = new URLSearchParams(searchParams);
+    if (val.trim()) {
+      next.set('q', val);
+    } else {
+      next.delete('q');
+    }
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    const next = new URLSearchParams(searchParams);
+    next.delete('q');
+    setSearchParams(next, { replace: true });
+  };
 
   useEffect(() => {
     const handleCityChange = (e) => setCurrentCity(e.detail);
@@ -126,6 +151,18 @@ export default function MoviesPage() {
     return map;
   }, [filteredCityShowsForTheatres]);
 
+  // Movies matching the search query across all catalog
+  const catalogMatches = useMemo(() => {
+    if (!query) return [];
+    return movies.filter(
+      (m) =>
+        m.title?.toLowerCase().includes(query) ||
+        m.genre?.some((g) => g.toLowerCase().includes(query)) ||
+        m.language?.toLowerCase().includes(query) ||
+        m.description?.toLowerCase().includes(query)
+    );
+  }, [movies, query]);
+
   // Filtered movies according to city & filter controls
   const filteredMovies = useMemo(() => {
     let list = [...movies];
@@ -139,7 +176,9 @@ export default function MoviesPage() {
       list = list.filter(
         (m) =>
           m.title?.toLowerCase().includes(query) ||
-          m.genre?.some((g) => g.toLowerCase().includes(query))
+          m.genre?.some((g) => g.toLowerCase().includes(query)) ||
+          m.language?.toLowerCase().includes(query) ||
+          m.description?.toLowerCase().includes(query)
       );
     }
 
@@ -151,6 +190,36 @@ export default function MoviesPage() {
 
     return list;
   }, [movies, movieIdsInCity, showAllCatalog, query, genre, language, sort]);
+
+  const isFallbackToCatalog = Boolean(query && filteredMovies.length === 0 && catalogMatches.length > 0);
+  const displayMovies = isFallbackToCatalog ? catalogMatches : filteredMovies;
+
+  // Filtered theatres in current city + query filter
+  const filteredTheatres = useMemo(() => {
+    let list = cityTheatres;
+    if (query) {
+      list = list.filter((t) => {
+        const matchName = t.name?.toLowerCase().includes(query);
+        const matchAddress = t.address?.toLowerCase().includes(query);
+        const matchCity = t.city?.toLowerCase().includes(query);
+        const tShows = theatreShowMap[String(t._id)] || [];
+        const matchMovie = tShows.some((s) =>
+          s.movie?.title?.toLowerCase().includes(query) ||
+          s.movie?.genre?.some((g) => g.toLowerCase().includes(query))
+        );
+        return matchName || matchAddress || matchCity || matchMovie;
+      });
+      if (list.length === 0) {
+        list = theatres.filter((t) => {
+          const matchName = t.name?.toLowerCase().includes(query);
+          const matchAddress = t.address?.toLowerCase().includes(query);
+          const matchCity = t.city?.toLowerCase().includes(query);
+          return matchName || matchAddress || matchCity;
+        });
+      }
+    }
+    return list;
+  }, [cityTheatres, theatres, query, theatreShowMap]);
 
   const genres = useMemo(() => {
     const set = new Set();
@@ -168,7 +237,7 @@ export default function MoviesPage() {
   return (
     <div className="container">
       {/* Header & City Switcher */}
-      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', paddingBottom: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
             <MapPin size={20} color="var(--accent)" />
@@ -181,8 +250,8 @@ export default function MoviesPage() {
           </h1>
           <p>
             {activeTab === 'movies'
-              ? `${filteredMovies.length} movies currently ${showAllCatalog ? 'in total catalog' : `running in ${currentCity}`}`
-              : `${cityTheatres.length} cinemas and multiplexes available in ${currentCity}`}
+              ? `${displayMovies.length} movie${displayMovies.length === 1 ? '' : 's'} ${query ? `matching "${query}"` : (showAllCatalog ? 'in total catalog' : `running in ${currentCity}`)}`
+              : `${filteredTheatres.length} cinema${filteredTheatres.length === 1 ? '' : 's'} available in ${currentCity}`}
           </p>
         </div>
 
@@ -208,6 +277,54 @@ export default function MoviesPage() {
           </button>
         </div>
       </header>
+
+      {/* Live In-Page Search Bar */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div className="search-bar-inline">
+          <Search className="search-icon" size={18} />
+          <input
+            type="search"
+            placeholder={
+              activeTab === 'movies'
+                ? `Type to search movies by title, genre, language (e.g. Fauzi, Paradise, Action, Telugu)…`
+                : `Type to search theatres in ${currentCity} or by name, address (e.g. INOX, PVR, Cinepolis)…`
+            }
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            aria-label="Search"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              className="search-clear-btn"
+              onClick={handleClearSearch}
+              title="Clear search"
+              aria-label="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        {query && (
+          <div style={{ marginTop: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <span>
+              Searching for: <strong style={{ color: 'var(--text)' }}>"{query}"</strong>
+              {' — '}
+              {activeTab === 'movies'
+                ? `${displayMovies.length} movie${displayMovies.length === 1 ? '' : 's'} found`
+                : `${filteredTheatres.length} theatre${filteredTheatres.length === 1 ? '' : 's'} found`}
+            </span>
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={handleClearSearch}
+              style={{ padding: '0.15rem 0.6rem', fontSize: '0.78rem' }}
+            >
+              Clear search
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* ===================== TAB 1: MOVIES VIEW ===================== */}
       {activeTab === 'movies' && (
@@ -274,14 +391,38 @@ export default function MoviesPage() {
             ))}
           </div>
 
-          {filteredMovies.length === 0 ? (
+          {isFallbackToCatalog && (
+            <div
+              className="glass"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.85rem 1.25rem',
+                borderRadius: 'var(--radius)',
+                marginBottom: '1.25rem',
+                border: '1px solid var(--gold-dim)',
+              }}
+            >
+              <Sparkles size={18} color="var(--gold)" />
+              <span style={{ fontSize: '0.9rem' }}>
+                No active screenings found in <strong>{currentCity}</strong> matching "{query}". Showing <strong>{catalogMatches.length}</strong> matching title{catalogMatches.length === 1 ? '' : 's'} from the full catalog!
+              </span>
+            </div>
+          )}
+
+          {displayMovies.length === 0 ? (
             <EmptyState
-              title={`No movies found for ${currentCity}`}
-              message="Try switching cities from the header or select 'Show All Catalog Titles'."
+              title={query ? `No movies found matching "${query}"` : `No movies found for ${currentCity}`}
+              message={
+                query
+                  ? "Try checking your spelling or search for another title or genre."
+                  : "Try switching cities from the header or select 'Show All Catalog Titles'."
+              }
             />
           ) : (
             <div className="movie-grid" style={{ marginBottom: '3rem' }}>
-              {filteredMovies.map((m) => (
+              {displayMovies.map((m) => (
                 <MovieCard key={m._id} movie={m} onTrailer={() => setTrailer(m)} />
               ))}
             </div>
@@ -348,14 +489,18 @@ export default function MoviesPage() {
             </div>
           )}
 
-          {cityTheatres.length === 0 ? (
+          {filteredTheatres.length === 0 ? (
             <EmptyState
-              title={`No theatres registered in ${currentCity}`}
-              message="Choose another city from the location dropdown in the navigation bar."
+              title={query ? `No theatres found matching "${query}"` : `No theatres registered in ${currentCity}`}
+              message={
+                query
+                  ? "Try searching for a different cinema name, location, or movie title."
+                  : "Choose another city from the location dropdown in the navigation bar."
+              }
             />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {cityTheatres.map((theatre) => {
+              {filteredTheatres.map((theatre) => {
                 const theatreShows = theatreShowMap[String(theatre._id)] || [];
 
                 // Group shows by movie for this theatre
