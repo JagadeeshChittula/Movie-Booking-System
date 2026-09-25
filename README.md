@@ -265,8 +265,8 @@ npm run dev
 
 ## 🔑 Admin Access & Gatekeeper Portal
 
-The system has a dedicated **Admin** account configured in the database:
-- **Email:** `jagadeesh@gmail.com`
+The system supports administrator accounts configured in the database:
+- **Email:** `admin@example.com` (or your configured admin email)
 - **Role:** `admin`
 
 ### Logging In:
@@ -355,7 +355,7 @@ To populate popular movies (*Inception, Interstellar, Oppenheimer, Jawan, RRR, D
 
 ```bash
 cd Backend
-node populate-via-api.js jagadeesh@gmail.com your_admin_password
+node populate-via-api.js admin@example.com your_admin_password
 ```
 
 ---

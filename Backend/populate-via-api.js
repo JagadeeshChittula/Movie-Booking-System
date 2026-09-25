@@ -7,8 +7,14 @@ require('dotenv').config();
 
 const API = process.env.API_URL || 'http://localhost:4000';
 
-const email = process.argv[2] || process.env.ADMIN_EMAIL || 'admin@cinevault.com';
-const password = process.argv[3] || process.env.ADMIN_PASSWORD || 'admin123';
+const email = process.argv[2] || process.env.ADMIN_EMAIL || 'admin@example.com';
+const password = process.argv[3] || process.env.ADMIN_PASSWORD;
+
+if (!password) {
+  console.error('Error: Please provide admin password as an argument or set ADMIN_PASSWORD in your .env file.');
+  console.error('Usage: node populate-via-api.js [adminEmail] [adminPassword]');
+  process.exit(1);
+}
 
 async function request(method, path, body, token) {
   const res = await fetch(`${API}${path}`, {

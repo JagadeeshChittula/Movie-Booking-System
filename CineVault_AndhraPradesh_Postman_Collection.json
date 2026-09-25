@@ -29,6 +29,16 @@
       "key": "booking_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "admin_email",
+      "value": "admin@example.com",
+      "type": "string"
+    },
+    {
+      "key": "admin_password",
+      "value": "password123",
+      "type": "string"
     }
   ],
   "item": [
@@ -36,7 +46,7 @@
       "name": "1. Authentication",
       "item": [
         {
-          "name": "Admin Login (Jagadeesh)",
+          "name": "Admin Login",
           "event": [
             {
               "listen": "test",
@@ -62,7 +72,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"jagadeesh@gmail.com\",\n  \"password\": \"admin123\"\n}"
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
@@ -103,7 +113,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Suresh Varma\",\n  \"email\": \"suresh.vizag@gmail.com\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"name\": \"Sample User\",\n  \"email\": \"user@example.com\",\n  \"password\": \"UserPass123!\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
@@ -129,7 +139,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"jagadeesh@gmail.com\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/forgot-password",
@@ -155,7 +165,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"jagadeesh@gmail.com\",\n  \"resetCode\": \"813898\",\n  \"newPassword\": \"admin123\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"resetCode\": \"123456\",\n  \"newPassword\": \"NewSecurePass123!\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/reset-password",
