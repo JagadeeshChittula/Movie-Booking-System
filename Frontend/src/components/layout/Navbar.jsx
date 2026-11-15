@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Search, Sun, Moon, Menu, X, User, LogOut, LayoutDashboard, MapPin, Navigation, Clapperboard } from 'lucide-react';
+import { Search, Sun, Moon, Menu, X, User, LogOut, LayoutDashboard, Navigation } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
@@ -36,14 +36,6 @@ export default function Navbar({ onSearch }) {
   const [city, setCityState] = useState(getCity);
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [locating, setLocating] = useState(false);
-
-  // Keep query in sync with URL search parameter
-  useEffect(() => {
-    if (location.pathname === '/movies') {
-      const q = searchParams.get('q') || '';
-      setQuery(q);
-    }
-  }, [location.pathname, searchParams]);
 
   useEffect(() => {
     const handleCitySync = (e) => setCityState(e.detail);

@@ -23,7 +23,6 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
     Promise.all([movieApi.getAll(), showApi.getAll(), theatreApi.getAll()])
       .then(([movieRes, showRes, theatreRes]) => {
         setMovies(movieRes.data.movies?.filter((m) => m.isActive !== false) || []);

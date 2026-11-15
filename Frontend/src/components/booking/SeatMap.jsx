@@ -1,14 +1,12 @@
 import { useMemo } from 'react';
-import { Sparkles, Eye, ShieldAlert, Award, Crown, Check } from 'lucide-react';
-import { generateSeatIds, getSeatTier, getSeatPriceMultiplier } from '../../utils/seats';
+import { Sparkles, Award, Crown, Check } from 'lucide-react';
+import { generateSeatIds, getSeatTier } from '../../utils/seats';
 import { formatCurrency } from '../../utils/format';
 
 export default function SeatMap({
   rows = 8,
   cols = 12,
   screenType = '2D',
-  screenName = 'Main Screen',
-  theatreName = 'Cinema Hall',
   basePrice = 150,
   bookedSeats = [],
   lockedSeats = [],

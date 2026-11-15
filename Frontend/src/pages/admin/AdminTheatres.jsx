@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Search, X, MapPin, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, Eye, EyeOff } from 'lucide-react';
 import { theatreApi } from '../../api/services';
 import { useToast } from '../../context/ToastContext';
 import Loader from '../../components/ui/Loader';

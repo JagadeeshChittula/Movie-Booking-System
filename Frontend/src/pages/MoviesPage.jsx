@@ -6,10 +6,6 @@ import {
   MapPin,
   Clock,
   Sparkles,
-  Ticket,
-  ChevronRight,
-  Filter,
-  CheckCircle,
   Search,
   X,
 } from 'lucide-react';
@@ -18,7 +14,7 @@ import MovieCard from '../components/movie/MovieCard';
 import TrailerModal from '../components/movie/TrailerModal';
 import Loader from '../components/ui/Loader';
 import EmptyState from '../components/ui/EmptyState';
-import { getCity, setCity } from '../utils/storage';
+import { getCity } from '../utils/storage';
 import { formatTime } from '../utils/format';
 
 export default function MoviesPage() {
@@ -38,14 +34,7 @@ export default function MoviesPage() {
 
   const activeTab = searchParams.get('tab') === 'theatres' ? 'theatres' : 'movies';
   const query = searchParams.get('q')?.toLowerCase().trim() || '';
-  const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
-
-  useEffect(() => {
-    setSearchInput(searchParams.get('q') || '');
-  }, [searchParams]);
-
   const handleSearchChange = (val) => {
-    setSearchInput(val);
     const next = new URLSearchParams(searchParams);
     if (val.trim()) {
       next.set('q', val);
@@ -56,7 +45,6 @@ export default function MoviesPage() {
   };
 
   const handleClearSearch = () => {
-    setSearchInput('');
     const next = new URLSearchParams(searchParams);
     next.delete('q');
     setSearchParams(next, { replace: true });
@@ -69,7 +57,6 @@ export default function MoviesPage() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
     Promise.all([movieApi.getAll(), showApi.getAll(), theatreApi.getAll()])
       .then(([movieRes, showRes, theatreRes]) => {
         setMovies(movieRes.data.movies?.filter((m) => m.isActive !== false) || []);
@@ -289,11 +276,11 @@ export default function MoviesPage() {
                 ? `Type to search movies by title, genre, language (e.g. Fauzi, Paradise, Action, Telugu)…`
                 : `Type to search theatres in ${currentCity} or by name, address (e.g. INOX, PVR, Cinepolis)…`
             }
-            value={searchInput}
+            value={query}
             onChange={(e) => handleSearchChange(e.target.value)}
             aria-label="Search"
           />
-          {searchInput && (
+          {query && (
             <button
               type="button"
               className="search-clear-btn"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Star, Calendar, Globe, Clock, Ticket } from 'lucide-react';
 import { movieApi, showApi } from '../api/services';
@@ -8,7 +8,7 @@ import Loader from '../components/ui/Loader';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { formatDate, formatDuration } from '../utils/format';
-import { getCity } from '../utils/storage';
+import { getCity, setCity } from '../utils/storage';
 
 export default function MovieDetailPage() {
   const { id } = useParams();
@@ -16,7 +16,6 @@ export default function MovieDetailPage() {
   const { isAuthenticated } = useAuth();
   const toast = useToast();
   const [movie, setMovie] = useState(null);
-  const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedShow, setSelectedShow] = useState(null);
@@ -44,22 +43,16 @@ export default function MovieDetailPage() {
       .finally(() => setLoading(false));
   }, [id, toast]);
 
-  // Filter shows for active currentCity
-  useEffect(() => {
-    const inCity = allShowsForMovie.filter(
+  const shows = useMemo(() => allShowsForMovie.filter(
       (s) => s.theatre?.city?.toLowerCase().trim() === currentCity.toLowerCase().trim()
-    );
-    setShows(inCity);
-    const dates = [...new Set(inCity.map((s) => new Date(s.showDate).toDateString()))].sort(
+    ), [allShowsForMovie, currentCity]);
+
+  const availableDates = useMemo(() => [...new Set(shows.map((s) => new Date(s.showDate).toDateString()))].sort(
       (a, b) => new Date(a) - new Date(b)
-    );
-    if (dates.length > 0) {
-      setSelectedDate(dates[0]);
-    } else {
-      setSelectedDate('');
-    }
-    setSelectedShow(null);
-  }, [allShowsForMovie, currentCity]);
+    ), [shows]);
+  const activeSelectedDate = availableDates.includes(selectedDate)
+    ? selectedDate
+    : availableDates[0] || '';
 
   // Cities where shows exist
   const otherCities = [...new Set(allShowsForMovie.map((s) => s.theatre?.city).filter(Boolean))].filter(
@@ -69,6 +62,7 @@ export default function MovieDetailPage() {
   const handleSwitchCity = (newCity) => {
     setCity(newCity);
     setCurrentCity(newCity);
+    setSelectedShow(null);
     window.dispatchEvent(new CustomEvent('citychange', { detail: newCity }));
   };
 
@@ -78,7 +72,7 @@ export default function MovieDetailPage() {
       navigate('/login', { state: { from: `/movies/${id}` } });
       return;
     }
-    if (!selectedShow) {
+    if (!selectedShow || !shows.some((show) => show._id === selectedShow._id)) {
       toast.error('Select a show time');
       return;
     }
@@ -178,8 +172,11 @@ export default function MovieDetailPage() {
           <>
             <ShowTimePicker
               shows={shows}
-              selectedDate={selectedDate}
-              onDateChange={setSelectedDate}
+              selectedDate={activeSelectedDate}
+              onDateChange={(date) => {
+                setSelectedDate(date);
+                setSelectedShow(null);
+              }}
               selectedShow={selectedShow}
               onShowSelect={setSelectedShow}
             />

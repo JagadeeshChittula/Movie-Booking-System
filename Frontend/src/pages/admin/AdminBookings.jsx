@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Search, X, Eye, EyeOff, Ban } from 'lucide-react';
+import { Search, X, Ban } from 'lucide-react';
 import { bookingApi } from '../../api/services';
 import { useToast } from '../../context/ToastContext';
 import Loader from '../../components/ui/Loader';
