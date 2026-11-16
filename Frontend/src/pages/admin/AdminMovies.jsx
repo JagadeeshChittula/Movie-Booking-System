@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Search, X, Star, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, Star, Eye, EyeOff, Upload, Image as ImageIcon } from 'lucide-react';
 import { movieApi } from '../../api/services';
 import { useToast } from '../../context/ToastContext';
 import Loader from '../../components/ui/Loader';
@@ -315,17 +315,134 @@ export default function AdminMovies() {
         <form onSubmit={handleSubmit} style={{ padding: '2rem' }}>
           <h2 style={{ marginBottom: '1rem' }}>{editId ? 'Edit' : 'Add'} Movie</h2>
           <div className="admin-form" style={{ maxWidth: '100%' }}>
-            {['title', 'description', 'posterUrl', 'trailerUrl', 'language'].map((key) => (
-              <div key={key} className="field">
-                <label>{key}</label>
+            <div className="field">
+              <label>Title</label>
+              <input
+                className="input"
+                placeholder="e.g. Inception, Toxic, etc."
+                value={form.title || ''}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="field">
+              <label>Description / Synopsis</label>
+              <textarea
+                className="input"
+                rows={3}
+                placeholder="Plot synopsis, director notes, etc."
+                value={form.description || ''}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                required
+                style={{ resize: 'vertical' }}
+              />
+            </div>
+
+            {/* Poster Upload & URL Section with Live Preview */}
+            <div className="field">
+              <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Movie Poster (Image Upload or URL)</span>
+                {form.posterUrl && <span style={{ color: 'var(--success)', fontSize: '0.78rem' }}>✓ Poster Selected</span>}
+              </label>
+
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <input
+                    className="input"
+                    placeholder="Paste image URL (https://...)"
+                    value={form.posterUrl || ''}
+                    onChange={(e) => setForm({ ...form, posterUrl: e.target.value })}
+                    required
+                    style={{ marginBottom: '0.5rem' }}
+                  />
+
+                  {/* Direct File Picker */}
+                  <label
+                    className="btn btn--secondary btn--sm"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      cursor: 'pointer',
+                      padding: '0.4rem 0.8rem',
+                    }}
+                  >
+                    <Upload size={14} />
+                    <span>Upload Poster File (PNG, JPG, WEBP)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setForm((prev) => ({ ...prev, posterUrl: event.target.result }));
+                            toast.success(`Loaded "${file.name}"!`);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* Live Image Preview Thumbnail */}
+                <div
+                  style={{
+                    width: 70,
+                    height: 100,
+                    borderRadius: 6,
+                    border: '1px solid var(--border)',
+                    overflow: 'hidden',
+                    background: 'var(--bg-hover)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {form.posterUrl ? (
+                    <img
+                      src={form.posterUrl}
+                      alt="Poster Preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.65rem' }}>
+                      <ImageIcon size={18} style={{ margin: '0 auto 2px' }} />
+                      Preview
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="field">
+                <label>Language</label>
                 <input
                   className="input"
-                  value={form[key] || ''}
-                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  required={['title', 'description', 'posterUrl', 'language'].includes(key)}
+                  placeholder="e.g. Hindi, Telugu, English"
+                  value={form.language || ''}
+                  onChange={(e) => setForm({ ...form, language: e.target.value })}
+                  required
                 />
               </div>
-            ))}
+
+              <div className="field">
+                <label>Trailer URL (YouTube)</label>
+                <input
+                  className="input"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={form.trailerUrl || ''}
+                  onChange={(e) => setForm({ ...form, trailerUrl: e.target.value })}
+                />
+              </div>
+            </div>
             <div className="field">
               <label>genre (comma separated)</label>
               <input className="input" value={form.genre} onChange={(e) => setForm({ ...form, genre: e.target.value })} required />

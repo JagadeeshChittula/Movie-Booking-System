@@ -64,6 +64,16 @@ const paymentSchema = new mongoose.Schema(
       type: Date,
     },
 
+    razorpayOrderId: {
+      type: String,
+      default: null,
+    },
+
+    razorpayPaymentId: {
+      type: String,
+      default: null,
+    },
+
     // Gateway response
     gatewayResponse: {
       type: Object,

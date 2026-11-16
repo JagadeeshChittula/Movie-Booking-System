@@ -10,6 +10,7 @@ import HomePage from './pages/HomePage';
 import MoviesPage from './pages/MoviesPage';
 import MovieDetailPage from './pages/MovieDetailPage';
 import SeatSelectionPage from './pages/SeatSelectionPage';
+import SnacksPage from './pages/SnacksPage';
 import CheckoutPage from './pages/CheckoutPage';
 import BookingSuccessPage from './pages/BookingSuccessPage';
 import MyBookingsPage from './pages/MyBookingsPage';
@@ -22,6 +23,7 @@ import NotFoundPage from './pages/NotFoundPage';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminMovies from './pages/admin/AdminMovies';
+import AdminLocations from './pages/admin/AdminLocations';
 import AdminTheatres from './pages/admin/AdminTheatres';
 import AdminScreens from './pages/admin/AdminScreens';
 import AdminShows from './pages/admin/AdminShows';
@@ -40,6 +42,7 @@ export default function App() {
                 <Route index element={<HomePage />} />
                 <Route path="movies" element={<MoviesPage />} />
                 <Route path="movies/:id" element={<MovieDetailPage />} />
+                <Route path="snacks" element={<SnacksPage />} />
                 <Route
                   path="book/:showId"
                   element={
@@ -98,6 +101,7 @@ export default function App() {
                 <Route index element={<AdminDashboard />} />
                 <Route path="scanner" element={<AdminTicketScanner />} />
                 <Route path="movies" element={<AdminMovies />} />
+                <Route path="locations" element={<AdminLocations />} />
                 <Route path="theatres" element={<AdminTheatres />} />
                 <Route path="screens" element={<AdminScreens />} />
                 <Route path="shows" element={<AdminShows />} />

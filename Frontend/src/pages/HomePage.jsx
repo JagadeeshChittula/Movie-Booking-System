@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { Sparkles, TrendingUp, Clock, MapPin, Building2, ChevronRight, Film } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Sparkles, TrendingUp, Clock, MapPin, Building2, ChevronRight, Film, Search, X } from 'lucide-react';
 import { movieApi, showApi, theatreApi } from '../api/services';
 import HeroBanner from '../components/movie/HeroBanner';
 import MovieCard from '../components/movie/MovieCard';
@@ -9,12 +9,14 @@ import Loader from '../components/ui/Loader';
 import { getCity, getWatchlist } from '../utils/storage';
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const [movies, setMovies] = useState([]);
   const [theatres, setTheatres] = useState([]);
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentCity, setCurrentCity] = useState(getCity);
   const [trailer, setTrailer] = useState(null);
+  const [homeQuery, setHomeQuery] = useState('');
 
   useEffect(() => {
     const handleCityChange = (e) => setCurrentCity(e.detail);
@@ -69,14 +71,113 @@ export default function HomePage() {
   const watchlistIds = getWatchlist();
   const watchlist = movies.filter((m) => watchlistIds.includes(String(m._id)));
 
+  const searchedMovies = useMemo(() => {
+    const q = homeQuery.trim().toLowerCase();
+    if (!q) return [];
+    return movies.filter(
+      (m) =>
+        m.title.toLowerCase().includes(q) ||
+        m.language?.toLowerCase().includes(q) ||
+        m.genre?.some((g) => g.toLowerCase().includes(q))
+    );
+  }, [movies, homeQuery]);
+
   return (
     <>
       <HeroBanner movie={featured} onTrailer={() => setTrailer(featured)} />
       <TrailerModal open={!!trailer} onClose={() => setTrailer(null)} url={trailer?.trailerUrl} />
 
       <div className="container">
-        {/* City Scope Highlight Banner */}
-        <section className="section" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+        {/* Prominent Home Search Bar */}
+        <section style={{ marginTop: '1.75rem', marginBottom: '1.25rem' }}>
+          <div
+            className="glass"
+            style={{
+              padding: '0.85rem 1.25rem',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.85rem',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
+            }}
+          >
+            <Search size={22} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            <input
+              type="search"
+              placeholder={`Search movies in ${currentCity} by title, Telugu, Hindi, English, Action, Sci-Fi...`}
+              value={homeQuery}
+              onChange={(e) => setHomeQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && homeQuery.trim()) {
+                  navigate(`/movies?q=${encodeURIComponent(homeQuery.trim())}`);
+                }
+              }}
+              style={{
+                flex: 1,
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                fontSize: '1rem',
+                outline: 'none',
+              }}
+            />
+            {homeQuery && (
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => setHomeQuery('')}
+                style={{ padding: '0.35rem 0.65rem', fontSize: '0.82rem', gap: 4 }}
+              >
+                <X size={14} /> Clear
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => {
+                if (homeQuery.trim()) navigate(`/movies?q=${encodeURIComponent(homeQuery.trim())}`);
+                else navigate('/movies');
+              }}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              Explore
+            </button>
+          </div>
+        </section>
+
+        {/* If user is searching on Home, display live search results */}
+        {homeQuery.trim() ? (
+          <section className="section">
+            <div className="section__header">
+              <h2 className="section__title">
+                Search Results for "{homeQuery}" ({searchedMovies.length} found)
+              </h2>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setHomeQuery('')}>
+                Clear Search
+              </button>
+            </div>
+            {searchedMovies.length > 0 ? (
+              <div className="movie-grid">
+                {searchedMovies.map((m) => (
+                  <MovieCard key={m._id} movie={m} onTrailer={() => setTrailer(m)} />
+                ))}
+              </div>
+            ) : (
+              <div className="glass" style={{ padding: '3rem 2rem', textAlign: 'center', borderRadius: 'var(--radius-lg)' }}>
+                <Film size={48} style={{ opacity: 0.35, margin: '0 auto 1rem', display: 'block' }} />
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>No movies found matching "{homeQuery}"</h3>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '1.25rem' }}>Try searching by title (e.g. Pushpa, Devara), language, or genre.</p>
+                <button type="button" className="btn btn--secondary" onClick={() => setHomeQuery('')}>
+                  View All Available Movies
+                </button>
+              </div>
+            )}
+          </section>
+        ) : (
+          <>
+            {/* City Scope Highlight Banner */}
+            <section className="section" style={{ marginTop: '1rem', marginBottom: '1.5rem' }}>
           <div
             className="glass"
             style={{
@@ -223,6 +324,8 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+        </>
+      )}
       </div>
     </>
   );

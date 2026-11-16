@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Search, X, Eye, EyeOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, Pencil, Trash2, Search, X, Eye, EyeOff, MapPin } from 'lucide-react';
 import { theatreApi } from '../../api/services';
 import { useToast } from '../../context/ToastContext';
 import Loader from '../../components/ui/Loader';
@@ -16,9 +17,18 @@ export default function AdminTheatres() {
   const [form, setForm] = useState(empty);
   const [searchTerm, setSearchTerm] = useState('');
   const [visibilityFilter, setVisibilityFilter] = useState('all');
+  const [cityFilter, setCityFilter] = useState('all');
 
   const load = () => theatreApi.getAll({ all: true }).then(({ data }) => setItems(data.theatres || [])).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
+
+  const cities = useMemo(() => {
+    const set = new Set();
+    items.forEach((t) => {
+      if (t.city?.trim()) set.add(t.city.trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [items]);
 
   const handleToggleHide = async (t) => {
     const isCurrentlyHidden = t.isActive === false;
@@ -34,6 +44,10 @@ export default function AdminTheatres() {
 
   const filteredTheatres = useMemo(() => {
     let list = items;
+
+    if (cityFilter !== 'all') {
+      list = list.filter((t) => (t.city || '').toLowerCase().trim() === cityFilter.toLowerCase().trim());
+    }
 
     if (visibilityFilter === 'visible') {
       list = list.filter((t) => t.isActive !== false);
@@ -55,7 +69,8 @@ export default function AdminTheatres() {
     }
 
     return list;
-  }, [items, searchTerm, visibilityFilter]);
+  }, [items, searchTerm, visibilityFilter, cityFilter]);
+
 
   const openAdd = () => {
     setEditId(null);
@@ -115,16 +130,21 @@ export default function AdminTheatres() {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem' }}>Theatres</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
             Manage cinema properties, locations, visibility (hide/unhide), and amenities
           </p>
         </div>
-        <button type="button" className="btn btn--primary" onClick={openAdd}>
-          <Plus size={18} /> Add Theatre
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Link to="/admin/locations" className="btn btn--secondary">
+            <MapPin size={16} /> Location Manager
+          </Link>
+          <button type="button" className="btn btn--primary" onClick={openAdd}>
+            <Plus size={18} /> Add Theatre
+          </button>
+        </div>
       </div>
 
       <div className="admin-toolbar">
@@ -151,6 +171,25 @@ export default function AdminTheatres() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {/* City / Location Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <MapPin size={15} style={{ color: 'var(--accent)' }} />
+            <select
+              className="input"
+              style={{ padding: '0.4rem 0.75rem', fontSize: '0.82rem', minWidth: 140 }}
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              aria-label="Filter by City"
+            >
+              <option value="all">All Locations ({items.length})</option>
+              {cities.map((c) => (
+                <option key={c} value={c}>
+                  {c} ({items.filter((t) => t.city === c).length})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Hide/Show Filter Tabs */}
           <div className="admin-filter-group" title="Filter by visibility">
             <button
@@ -181,6 +220,7 @@ export default function AdminTheatres() {
           </span>
         </div>
       </div>
+
 
       <div className="data-table-wrap">
         <table className="data-table">

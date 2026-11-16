@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CreditCard, Smartphone, Wallet, Shield, Plus, Minus, Tag, Check, UtensilsCrossed, Clock } from 'lucide-react';
+import { CreditCard, Smartphone, Wallet, Shield, Plus, Minus, Tag, Check, UtensilsCrossed, Clock, Coins, Sparkles } from 'lucide-react';
 import { bookingApi, paymentApi, seatLockApi } from '../api/services';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useSeatLockTimer } from '../hooks/useSeatLockTimer';
 import { formatCurrency, formatDate, formatTime } from '../utils/format';
@@ -17,6 +18,7 @@ const METHODS = [
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
   const [checkout, setCheckout] = useState(() => getCheckout());
   const [expiresAt, setExpiresAt] = useState(() => checkout?.expiresAt);
   const [extending, setExtending] = useState(false);
@@ -31,6 +33,10 @@ export default function CheckoutPage() {
   // Coupon / Promo code state
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+  // CineCoins Loyalty State
+  const [useCoins, setUseCoins] = useState(false);
+  const userCoins = user?.cineCoins ?? 150;
 
   const { formatted, expired } = useSeatLockTimer(expiresAt);
 
@@ -87,19 +93,33 @@ export default function CheckoutPage() {
     return sum + (item ? item.price * qty : 0);
   }, 0);
 
-  // Calculate Discounts
-  let discountAmount = 0;
+  // Movie ticket holder concession perk: 20% OFF all snacks!
+  const snackDiscount = snackTotal > 0 ? Math.round(snackTotal * 0.20) : 0;
+  const effectiveSnackTotal = Math.max(0, snackTotal - snackDiscount);
+
+  // Calculate Coupon Discounts
+  let couponDiscountAmount = 0;
   if (appliedCoupon) {
     if (appliedCoupon.type === 'flat') {
-      discountAmount = appliedCoupon.value;
+      couponDiscountAmount = appliedCoupon.value;
     } else if (appliedCoupon.type === 'percent') {
-      discountAmount = Math.round((pricing.total + snackTotal) * (appliedCoupon.value / 100));
-      if (appliedCoupon.max) discountAmount = Math.min(discountAmount, appliedCoupon.max);
+      couponDiscountAmount = Math.round((pricing.total + effectiveSnackTotal) * (appliedCoupon.value / 100));
+      if (appliedCoupon.max) couponDiscountAmount = Math.min(couponDiscountAmount, appliedCoupon.max);
     }
   }
 
+  // CineCoins Loyalty Redemption (1 coin = ₹1, up to 40% of subtotal)
+  const maxCoinsRedeemable = Math.min(userCoins, Math.floor(pricing.total * 0.40));
+  const coinsDiscount = useCoins ? maxCoinsRedeemable : 0;
+
+  // Overall Discount
+  const totalDiscount = couponDiscountAmount + snackDiscount + coinsDiscount;
+
   // Grand Total Calculation
-  const finalTotal = Math.max(0, pricing.total + snackTotal - discountAmount);
+  const finalTotal = Math.max(0, pricing.total + snackTotal - totalDiscount);
+
+  // Coins earned on this booking (10% of final total, min 15 coins)
+  const coinsEarned = Math.max(15, Math.floor(finalTotal * 0.10));
 
   const handleSnackQty = (id, delta) => {
     setSelectedSnacks((prev) => {
@@ -160,8 +180,9 @@ export default function CheckoutPage() {
         totalAmount: finalTotal,
         snacks: snacksPayload,
         snackTotal,
-        discount: discountAmount,
+        discount: totalDiscount,
         couponCode: appliedCoupon?.code || '',
+        coinsUsed: coinsDiscount,
       });
       const booking = bookingRes.booking;
 
@@ -171,6 +192,55 @@ export default function CheckoutPage() {
         paymentMethod: method,
       });
 
+      // If Razorpay order was created, open Razorpay popup
+      if (payRes.razorpayOrder && payRes.razorpayKeyId && window.Razorpay) {
+        const options = {
+          key: payRes.razorpayKeyId,
+          amount: payRes.razorpayOrder.amount,
+          currency: payRes.razorpayOrder.currency,
+          name: 'CineVault Tickets',
+          description: `${show.movie?.title} — ${seats?.length} Seat(s)`,
+          order_id: payRes.razorpayOrder.id,
+          handler: async (response) => {
+            try {
+              await paymentApi.verify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                paymentId: payRes.payment._id,
+              });
+              await bookingApi.confirm(booking._id);
+              clearCheckout();
+              navigate('/booking-success', {
+                state: {
+                  bookingId: booking._id,
+                  show,
+                  seats,
+                  total: finalTotal,
+                  snacks: snacksPayload,
+                  discount: totalDiscount || 0,
+                },
+              });
+            } catch (err) {
+              toast.error('Payment verification failed: ' + err.message);
+              setProcessing(false);
+            }
+          },
+          prefill: {},
+          theme: { color: '#e50914' },
+          modal: {
+            ondismiss: () => {
+              setProcessing(false);
+              toast.info('Payment window closed');
+            },
+          },
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+        return;
+      }
+
+      // Fallback: demo / simulation mode
       if (payRes?.payment?._id) {
         await paymentApi.success(payRes.payment._id);
       }
@@ -185,12 +255,11 @@ export default function CheckoutPage() {
           seats,
           total: finalTotal,
           snacks: snacksPayload,
-          discount: discountAmount,
+          discount: totalDiscount || 0,
         },
       });
     } catch (err) {
       toast.error(err.message);
-    } finally {
       setProcessing(false);
     }
   };
@@ -252,10 +321,23 @@ export default function CheckoutPage() {
       {step === 1 && (
         <div className="card" style={{ padding: '1.5rem' }}>
           <h3 style={{ marginBottom: '1rem' }}>Ticket Cost Breakdown</h3>
-          <div className="checkout-line">
-            <span>Seat Tickets ({seats?.length})</span>
-            <span>{formatCurrency(pricing.subtotal)}</span>
-          </div>
+          {pricing?.tierBreakdown ? (
+            Object.values(pricing.tierBreakdown)
+              .filter((tier) => tier.count > 0)
+              .map((tier) => (
+                <div key={tier.name} className="checkout-line">
+                  <span>
+                    {tier.name} ({tier.count} × {formatCurrency(tier.price)})
+                  </span>
+                  <span>{formatCurrency(tier.total)}</span>
+                </div>
+              ))
+          ) : (
+            <div className="checkout-line">
+              <span>Seat Tickets ({seats?.length})</span>
+              <span>{formatCurrency(pricing.subtotal)}</span>
+            </div>
+          )}
           <div className="checkout-line">
             <span>Convenience fee (incl. GST)</span>
             <span>{formatCurrency(pricing.convenience)}</span>
@@ -302,6 +384,14 @@ export default function CheckoutPage() {
                 {cat}
               </button>
             ))}
+          </div>
+
+          {/* Exclusive Snack Discount Perk Banner */}
+          <div style={{ background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.15) 0%, rgba(229, 9, 20, 0.1) 100%)', border: '1px solid rgba(212, 168, 83, 0.35)', borderRadius: 'var(--radius)', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.25rem' }}>
+            <Sparkles size={18} color="var(--gold)" />
+            <div style={{ fontSize: '0.85rem' }}>
+              <strong style={{ color: 'var(--gold)' }}>Cinema Ticket Perk:</strong> Flat <strong>20% OFF</strong> applied automatically to all combos, snacks, and beverages!
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -356,7 +446,9 @@ export default function CheckoutPage() {
               Back
             </button>
             <button type="button" className="btn btn--primary" style={{ flex: 1 }} onClick={goToPayment}>
-              Continue with {Object.keys(selectedSnacks).length} Snacks ({formatCurrency(snackTotal)}) →
+              {Object.keys(selectedSnacks).length > 0
+                ? `Continue with ${Object.keys(selectedSnacks).length} Snacks (${formatCurrency(snackTotal)}) →`
+                : 'Skip Snacks & Continue to Payment →'}
             </button>
           </div>
         </div>
@@ -391,11 +483,19 @@ export default function CheckoutPage() {
               {extending ? 'Refreshing...' : '+5 Minutes'}
             </button>
           </div>
-          {/* Coupon Code Section */}
+          {/* Coupon Code Section (100% Optional) */}
           <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.75rem' }}>
-              <Tag size={16} /> Have a Promo Code?
-            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0, fontSize: '0.95rem' }}>
+                <Tag size={16} /> Promo Code / Discount
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>(Optional)</span>
+              </h4>
+              {appliedCoupon && (
+                <button type="button" className="btn btn--ghost btn--sm" onClick={handleRemoveCoupon} style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem' }}>
+                  Remove
+                </button>
+              )}
+            </div>
             {appliedCoupon ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '0.75rem 1rem', borderRadius: 8 }}>
                 <div>
@@ -404,26 +504,62 @@ export default function CheckoutPage() {
                   </span>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>{appliedCoupon.description}</p>
                 </div>
-                <button type="button" className="btn btn--ghost btn--sm" onClick={handleRemoveCoupon}>
-                  Remove
-                </button>
               </div>
             ) : (
-              <form onSubmit={handleApplyCoupon} style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="Enter code (e.g. CINE50 or VAULT20)"
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value)}
-                  style={{ textTransform: 'uppercase' }}
-                />
-                <button type="submit" className="btn btn--secondary">Apply</button>
-              </form>
+              <div>
+                <form onSubmit={handleApplyCoupon} style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Enter promo code (Optional — leave blank if none)"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                  <button type="submit" className="btn btn--secondary" disabled={!couponInput.trim()}>
+                    Apply
+                  </button>
+                </form>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.45rem' }}>
+                  Optional discounts: <strong>CINE50</strong> (₹50 OFF) or <strong>VAULT20</strong> (20% OFF). Not required — you can pay full price directly.
+                </p>
+              </div>
             )}
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>
-              Available trial codes: <strong>CINE50</strong> (₹50 OFF) or <strong>VAULT20</strong> (20% OFF).
-            </p>
+          </div>
+
+          {/* CineCoins Loyalty Redemption Section (100% Optional) */}
+          <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.08) 0%, rgba(20, 20, 30, 0.6) 100%)', border: '1px solid rgba(212, 168, 83, 0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{ background: 'rgba(212, 168, 83, 0.2)', padding: '0.45rem', borderRadius: '50%', color: 'var(--gold)' }}>
+                  <Coins size={20} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    Redeem CineCoins
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 500 }}>(Optional)</span>
+                    <span className="badge badge--gold" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem' }}>
+                      {userCoins} Available
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                    Optional: Check the box only if you want an instant coin discount.
+                  </div>
+                </div>
+              </div>
+
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', background: 'var(--bg-hover)', padding: '0.4rem 0.85rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <input
+                  type="checkbox"
+                  checked={useCoins}
+                  onChange={(e) => setUseCoins(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: 'var(--gold)' }}
+                />
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: useCoins ? 'var(--gold)' : 'var(--text)' }}>
+                  {useCoins ? `Applied -₹${maxCoinsRedeemable}` : `Use ${maxCoinsRedeemable} Coins`}
+                </span>
+              </label>
+            </div>
           </div>
 
           {/* Final Calculation Box */}
@@ -438,20 +574,40 @@ export default function CheckoutPage() {
               <span>{formatCurrency(pricing.convenience)}</span>
             </div>
             {snackTotal > 0 && (
-              <div className="checkout-line">
-                <span>Food & Beverage ({Object.values(selectedSnacks).reduce((a, b) => a + b, 0)} items)</span>
-                <span>{formatCurrency(snackTotal)}</span>
-              </div>
+              <>
+                <div className="checkout-line">
+                  <span>Food & Beverage ({Object.values(selectedSnacks).reduce((a, b) => a + b, 0)} items)</span>
+                  <span>{formatCurrency(snackTotal)}</span>
+                </div>
+                {snackDiscount > 0 && (
+                  <div className="checkout-line" style={{ color: 'var(--success)' }}>
+                    <span>Ticket Holder Concession Perk (20% OFF)</span>
+                    <span>-{formatCurrency(snackDiscount)}</span>
+                  </div>
+                )}
+              </>
             )}
-            {discountAmount > 0 && (
+            {couponDiscountAmount > 0 && (
               <div className="checkout-line" style={{ color: 'var(--success)' }}>
                 <span>Coupon Discount ({appliedCoupon?.code})</span>
-                <span>-{formatCurrency(discountAmount)}</span>
+                <span>-{formatCurrency(couponDiscountAmount)}</span>
+              </div>
+            )}
+            {coinsDiscount > 0 && (
+              <div className="checkout-line" style={{ color: 'var(--gold)' }}>
+                <span>CineCoins Redeemed ({coinsDiscount} coins)</span>
+                <span>-{formatCurrency(coinsDiscount)}</span>
               </div>
             )}
             <div className="checkout-line total" style={{ marginTop: '0.75rem', paddingTop: '0.75rem' }}>
               <span>Amount to Pay</span>
               <span style={{ color: 'var(--gold)', fontSize: '1.25rem' }}>{formatCurrency(finalTotal)}</span>
+            </div>
+
+            {/* CineCoins Cashback Alert */}
+            <div style={{ marginTop: '0.75rem', padding: '0.5rem 0.75rem', background: 'rgba(212, 168, 83, 0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--gold)' }}>
+              <Coins size={15} />
+              <span>You will earn <strong>+{coinsEarned} CineCoins</strong> (₹{coinsEarned} value) on this booking!</span>
             </div>
           </div>
 
@@ -472,7 +628,9 @@ export default function CheckoutPage() {
           </div>
 
           <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '1rem' }}>
-            Demo mode enabled: payment simulation completes securely without external charges.
+            {typeof window !== 'undefined' && window.Razorpay
+              ? '🔒 Secure payment powered by Razorpay (Test Mode — no real charges)'
+              : 'Demo mode enabled: payment simulation completes securely without external charges.'}
           </p>
 
           <button

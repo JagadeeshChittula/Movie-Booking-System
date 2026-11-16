@@ -13,6 +13,7 @@ export const movieApi = {
   add: (data) => client.post('/movies/add', data),
   update: (id, data) => client.put(`/movies/update/${id}`, data),
   remove: (id) => client.delete(`/movies/delete/${id}`),
+  addReview: (id, data) => client.post(`/movies/${id}/review`, data),
 };
 
 export const theatreApi = {
@@ -21,6 +22,7 @@ export const theatreApi = {
   add: (data) => client.post('/theatres/add', data),
   update: (id, data) => client.put(`/theatres/${id}`, data),
   remove: (id) => client.delete(`/theatres/${id}`),
+  renameLocation: (data) => client.put('/theatres/location/rename', data),
 };
 
 export const screenApi = {
@@ -51,6 +53,8 @@ export const bookingApi = {
   create: (data) => client.post('/bookings/create', data),
   mine: () => client.get('/bookings/my-bookings'),
   getOne: (id) => client.get(`/bookings/${id}`),
+  lookupTicket: (code) => client.get(`/bookings/ticket-lookup/${encodeURIComponent(code)}`),
+  orderSnacks: (data) => client.post('/bookings/order-snacks', data),
   confirm: (id) => client.put(`/bookings/confirm/${id}`),
   cancel: (id) => client.put(`/bookings/cancel/${id}`),
   checkIn: (id) => client.put(`/bookings/check-in/${id}`),
@@ -59,6 +63,7 @@ export const bookingApi = {
 
 export const paymentApi = {
   create: (data) => client.post('/payments/create', data),
+  verify: (data) => client.post('/payments/verify', data),
   success: (id) => client.put(`/payments/success/${id}`),
   failed: (id) => client.put(`/payments/failed/${id}`),
 };

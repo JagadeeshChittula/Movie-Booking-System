@@ -57,6 +57,13 @@ const bookingSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Human-friendly ticket & booking code (e.g. CV-A9B2C3D4)
+    bookingCode: {
+      type: String,
+      default: "",
+      index: true,
+    },
+
     // Optional cancellation reason
     cancellationReason: {
       type: String,
@@ -87,6 +94,16 @@ const bookingSchema = new mongoose.Schema(
     couponCode: {
       type: String,
       default: "",
+    },
+
+    coinsUsed: {
+      type: Number,
+      default: 0,
+    },
+
+    coinsEarned: {
+      type: Number,
+      default: 0,
     },
 
     // Gatekeeper & Usher Validation

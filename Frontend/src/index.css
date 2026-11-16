@@ -1527,3 +1527,70 @@ ul {
   color: var(--text-muted);
   margin-top: 0.35rem;
 }
+
+/* ==========================================================================
+   3D Auditorium & Sightlines HUD Responsive Rules
+   ========================================================================== */
+.cinema-3d-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.experience-meter-hud {
+  background: rgba(16, 17, 28, 0.98);
+  padding: 1.25rem;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.hud-score-meter,
+.hud-metrics-breakdown {
+  border-left: 1px solid var(--border);
+  padding-left: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .cinema-viewport-container {
+    height: 320px !important;
+  }
+
+  .experience-meter-hud {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .hud-score-meter,
+  .hud-metrics-breakdown {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding-left: 0;
+    padding-top: 1rem;
+  }
+
+  .seat-map-wrap {
+    padding: 0.85rem;
+  }
+
+  .seat {
+    width: 26px;
+    height: 25px;
+    font-size: 0.55rem;
+  }
+
+  .seat-row {
+    gap: 0.2rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .seat-row__label {
+    width: 18px;
+    font-size: 0.68rem;
+  }
+}
+

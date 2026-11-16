@@ -47,6 +47,44 @@ const movieSchema = new mongoose.Schema(
       default: 0,
     },
 
+    userRating: {
+      type: Number,
+      default: 0,
+    },
+
+    userRatingCount: {
+      type: Number,
+      default: 0,
+    },
+
+    reviews: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        userName: {
+          type: String,
+          required: true,
+        },
+        rating: {
+          type: Number,
+          required: true,
+          min: 1,
+          max: 5,
+        },
+        comment: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
     isActive: {
       type: Boolean,
       default: true,

@@ -127,7 +127,6 @@ const getSingleTheatre = async (
 
 const deleteTheatre = async (req, res) => {
   try {
-
     const theatre = await Theatre.findByIdAndUpdate(
       req.params.id,
       { isActive: false },
@@ -145,25 +144,48 @@ const deleteTheatre = async (req, res) => {
       success: true,
       message: "Theatre deleted successfully",
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
+
+const renameLocation = async (req, res) => {
+  try {
+    const { oldCity, newCity } = req.body;
+    if (!oldCity || !newCity) {
+      return res.status(400).json({
+        success: false,
+        message: "Both oldCity and newCity are required",
+      });
+    }
+
+    const result = await Theatre.updateMany(
+      { city: { $regex: new RegExp(`^${oldCity.trim().replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}$`, "i") } },
+      { $set: { city: newCity.trim() } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Location renamed from "${oldCity}" to "${newCity}" across ${result.modifiedCount} theatres.`,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 const updateTheatre = async (req, res) => {
   try {
-
     const theatre = await Theatre.findByIdAndUpdate(
       req.params.id,
       req.body,
-      {
-        new: true,
-      }
+      { new: true }
     );
 
     if (!theatre) {
@@ -177,14 +199,19 @@ const updateTheatre = async (req, res) => {
       success: true,
       theatre,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
-module.exports = {addTheatre,getAllTheatres,getSingleTheatre,updateTheatre,deleteTheatre,};
+
+module.exports = {
+  addTheatre,
+  getAllTheatres,
+  getSingleTheatre,
+  updateTheatre,
+  deleteTheatre,
+  renameLocation,
+};

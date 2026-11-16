@@ -2,6 +2,8 @@ const express = require("express");
 const path = require("path");
 
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 require("dotenv").config();
 
@@ -60,7 +62,34 @@ io.on("connection", (socket) => {
 connectDB();
 
 // Middleware
+// 1. CORS first so all responses (including errors and rate-limits) have CORS headers
 app.use(cors());
+
+// 2. Security headers (configured to allow cross-origin API calls)
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// 3. Rate limiting (generous limit for development & active dashboard browsing)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 2000, // 2000 requests per 15 min allows smooth browsing of admin dashboard
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests, please try again after 15 minutes" },
+});
+app.use(limiter);
+
+// Auth rate limiter (50 attempts per 15 min)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: { success: false, message: "Too many login attempts, please try again later" },
+});
+app.use("/auth", authLimiter);
 
 app.use(express.json());
 
@@ -86,16 +115,8 @@ app.use("/shows", seatRoutes);
 
 app.use("/users", userRoutes);
 
-app.use("/dashboard",dashboardRoutes);
-
-app.use("/payments",paymentRoutes);
-
-
-
-
-
-
-
+app.use("/dashboard", dashboardRoutes);
+app.use("/payments", paymentRoutes);
 
 const PORT = process.env.PORT || 4000;
 

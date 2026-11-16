@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { Sparkles, Award, Crown, Check } from 'lucide-react';
-import { generateSeatIds, getSeatTier } from '../../utils/seats';
+import { Sparkles, Award, Crown, Check, Star } from 'lucide-react';
+import { generateSeatIds, getSeatTier, calculateSeatScore } from '../../utils/seats';
 import { formatCurrency } from '../../utils/format';
 
 export default function SeatMap({
@@ -29,38 +29,38 @@ export default function SeatMap({
 
   const rowKeys = useMemo(() => Object.keys(byRow), [byRow]);
 
-  // Group row keys into tiers
+  // Group row keys into tiers: Front = Regular (lowest price), Middle = Executive, Rear = VIP Recliner (highest price)
   const tierGroups = useMemo(() => {
     const groups = [
       {
-        id: 'premium',
-        name: 'VIP Recliner',
-        icon: Crown,
-        rows: [],
-        multiplier: 1.4,
-        color: 'var(--gold)',
-      },
-      {
-        id: 'executive',
-        name: 'Executive Prime',
-        icon: Award,
-        rows: [],
-        multiplier: 1.15,
-        color: 'var(--executive)',
-      },
-      {
         id: 'regular',
-        name: 'Classic Regular',
+        name: 'Classic Regular (Front Rows / Near Screen)',
         icon: Sparkles,
         rows: [],
         multiplier: 1.0,
         color: 'var(--regular)',
       },
+      {
+        id: 'executive',
+        name: 'Executive Prime · THX Sweet Spot (★ 90-100% Score)',
+        icon: Award,
+        rows: [],
+        multiplier: 1.2,
+        color: 'var(--executive)',
+      },
+      {
+        id: 'premium',
+        name: 'VIP Recliner (Rear Balcony / Luxury Recliner)',
+        icon: Crown,
+        rows: [],
+        multiplier: 1.45,
+        color: 'var(--gold)',
+      },
     ];
 
     rowKeys.forEach((rowKey, rowIndex) => {
       const tier = getSeatTier(rowIndex, rowKeys.length);
-      if (tier === 'premium') groups[0].rows.push(rowKey);
+      if (tier === 'regular') groups[0].rows.push(rowKey);
       else if (tier === 'executive') groups[1].rows.push(rowKey);
       else groups[2].rows.push(rowKey);
     });
@@ -98,6 +98,41 @@ export default function SeatMap({
 
   return (
     <div className="seat-map-wrap">
+      {/* seats.movie Header Legend Bar (Exact replica) */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          paddingBottom: '1rem',
+          marginBottom: '1.25rem',
+          borderBottom: '1px solid var(--border)',
+          fontSize: '0.8rem',
+          color: 'var(--text-muted)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem', flexWrap: 'wrap' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ width: 13, height: 13, borderRadius: 3, border: '1.5px solid #10b981', display: 'inline-block' }} /> Available
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ width: 13, height: 13, borderRadius: 3, border: '1.5px solid #f59e0b', display: 'inline-block' }} /> Best view zone
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ width: 13, height: 13, borderRadius: 3, background: '#ef4444', display: 'inline-block' }} /> Selected
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ width: 13, height: 13, borderRadius: 3, background: 'rgba(255,255,255,0.15)', display: 'inline-block' }} /> Sold
+          </span>
+        </div>
+
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 600 }}>
+          {rows * cols - bookedSeats.length} of {rows * cols} seats free
+        </span>
+      </div>
+
       {/* ================= CINEMA SCREEN VISUALIZATION ================= */}
       <div
         className="cinema-screen-container"
@@ -303,6 +338,13 @@ export default function SeatMap({
     const isLocked = lockedSeats.includes(seatId);
     const isSelected = selected.includes(seatId);
 
+    const match = seatId.match(/^([A-Z]+)(\d+)$/);
+    const rLetter = match ? match[1] : 'A';
+    const cNum = match ? parseInt(match[2], 10) : 1;
+    const rIdx = rowKeys.indexOf(rLetter);
+    const score = calculateSeatScore(rIdx, cNum - 1, rowKeys.length, cols);
+    const isSweetSpot = score >= 92 && !isBooked && !isLocked;
+
     let className = `seat seat--${tierId}`;
     if (isBooked) className += ' seat--booked';
     else if (isLocked) className += ' seat--locked';
@@ -315,7 +357,9 @@ export default function SeatMap({
         className={className}
         onClick={() => handleSeatClick(seatId)}
         disabled={isBooked || isLocked}
-        title={`Seat ${seatId} (${isBooked ? 'Sold' : isLocked ? 'Locked' : 'Available'})`}
+        title={`Seat ${seatId} (${tierId.toUpperCase()}) · ${score}% Sightline Score ${
+          isBooked ? '— Sold' : isLocked ? '— Held' : '— Click to View & Select'
+        }`}
         aria-label={`Seat ${seatId}`}
         style={{
           position: 'relative',
@@ -324,6 +368,20 @@ export default function SeatMap({
           justifyContent: 'center',
         }}
       >
+        {isSweetSpot && !isSelected && (
+          <span
+            style={{
+              position: 'absolute',
+              top: -2,
+              right: -2,
+              width: 5,
+              height: 5,
+              borderRadius: '50%',
+              background: '#22c55e',
+              boxShadow: '0 0 4px #22c55e',
+            }}
+          />
+        )}
         {isSelected ? (
           <Check size={11} strokeWidth={3.5} />
         ) : (

@@ -1,6 +1,7 @@
 import { setCity } from './storage';
 
 export const SUPPORTED_CITIES = [
+  // Andhra Pradesh & Telangana
   { name: 'Srikakulam', lat: 18.2949, lon: 83.8938, state: 'Andhra Pradesh' },
   { name: 'Visakhapatnam', lat: 17.6868, lon: 83.2185, state: 'Andhra Pradesh' },
   { name: 'Vizianagaram', lat: 18.1067, lon: 83.3956, state: 'Andhra Pradesh' },
@@ -12,10 +13,39 @@ export const SUPPORTED_CITIES = [
   { name: 'Kurnool', lat: 15.8281, lon: 78.0373, state: 'Andhra Pradesh' },
   { name: 'Nellore', lat: 14.4426, lon: 79.9865, state: 'Andhra Pradesh' },
   { name: 'Hyderabad', lat: 17.3850, lon: 78.4867, state: 'Telangana' },
-  { name: 'Bengaluru', lat: 12.9716, lon: 77.5946, state: 'Karnataka' },
-  { name: 'Chennai', lat: 13.0827, lon: 80.2707, state: 'Tamil Nadu' },
-  { name: 'Mumbai', lat: 19.0760, lon: 72.8777, state: 'Maharashtra' },
+
+  // North
   { name: 'Delhi', lat: 28.6139, lon: 77.2090, state: 'Delhi' },
+  { name: 'Noida', lat: 28.5355, lon: 77.3910, state: 'Uttar Pradesh' },
+  { name: 'Gurgaon', lat: 28.4595, lon: 77.0266, state: 'Haryana' },
+  { name: 'Jaipur', lat: 26.9124, lon: 75.7873, state: 'Rajasthan' },
+  { name: 'Chandigarh', lat: 30.7333, lon: 76.7794, state: 'Chandigarh' },
+  { name: 'Lucknow', lat: 26.8467, lon: 80.9462, state: 'Uttar Pradesh' },
+
+  // West
+  { name: 'Mumbai', lat: 19.0760, lon: 72.8777, state: 'Maharashtra' },
+  { name: 'Pune', lat: 18.5204, lon: 73.8567, state: 'Maharashtra' },
+  { name: 'Ahmedabad', lat: 23.0225, lon: 72.5714, state: 'Gujarat' },
+  { name: 'Surat', lat: 21.1702, lon: 72.8311, state: 'Gujarat' },
+  { name: 'Goa', lat: 15.2993, lon: 74.1240, state: 'Goa' },
+
+  // South
+  { name: 'Bangalore', lat: 12.9716, lon: 77.5946, state: 'Karnataka' },
+  { name: 'Chennai', lat: 13.0827, lon: 80.2707, state: 'Tamil Nadu' },
+  { name: 'Kochi', lat: 9.9312, lon: 76.2673, state: 'Kerala' },
+  { name: 'Coimbatore', lat: 11.0168, lon: 76.9558, state: 'Tamil Nadu' },
+  { name: 'Thiruvananthapuram', lat: 8.5241, lon: 76.9366, state: 'Kerala' },
+
+  // East
+  { name: 'Kolkata', lat: 22.5726, lon: 88.3639, state: 'West Bengal' },
+  { name: 'Bhubaneswar', lat: 20.2961, lon: 85.8245, state: 'Odisha' },
+  { name: 'Guwahati', lat: 26.1445, lon: 91.7362, state: 'Assam' },
+  { name: 'Patna', lat: 25.5941, lon: 85.1376, state: 'Bihar' },
+
+  // Central
+  { name: 'Bhopal', lat: 23.2599, lon: 77.4126, state: 'Madhya Pradesh' },
+  { name: 'Indore', lat: 22.7196, lon: 75.8577, state: 'Madhya Pradesh' },
+  { name: 'Nagpur', lat: 21.1458, lon: 79.0882, state: 'Maharashtra' },
 ];
 
 /**

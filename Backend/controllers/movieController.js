@@ -209,4 +209,57 @@ const deleteMovie = async (req, res) => {
   }
 };
 
-module.exports = {addMovie, getAllMovies, getSingleMovie,updateMovie,deleteMovie,};
+// =============================
+// ADD REVIEW TO MOVIE
+// =============================
+const addMovieReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rating, comment } = req.body;
+
+    if (!rating || !comment) {
+      return res.status(400).json({ success: false, message: "Rating and comment are required" });
+    }
+
+    const movie = await Movie.findById(id);
+    if (!movie) {
+      return res.status(404).json({ success: false, message: "Movie not found" });
+    }
+
+    const newReview = {
+      user: req.user._id,
+      userName: req.user.name || "Movie Lover",
+      rating: Number(rating),
+      comment: comment.trim(),
+      createdAt: new Date(),
+    };
+
+    movie.reviews.unshift(newReview);
+
+    // Recalculate average user rating
+    const totalRating = movie.reviews.reduce((acc, r) => acc + r.rating, 0);
+    movie.userRating = parseFloat((totalRating / movie.reviews.length).toFixed(1));
+    movie.userRatingCount = movie.reviews.length;
+
+    await movie.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Review added successfully",
+      reviews: movie.reviews,
+      userRating: movie.userRating,
+      userRatingCount: movie.userRatingCount,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = {
+  addMovie,
+  getAllMovies,
+  getSingleMovie,
+  updateMovie,
+  deleteMovie,
+  addMovieReview,
+};

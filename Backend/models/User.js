@@ -55,6 +55,18 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    cineCoins: {
+      type: Number,
+      default: 150, // 150 Welcome CineCoins
+    },
+
+    watchlist: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Movie",
+      },
+    ],
   },
   {
     timestamps: true,

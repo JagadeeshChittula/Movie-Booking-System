@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
 const generateToken = require("../utils/generateToken");
+const { sendPasswordResetEmail } = require("../utils/emailService");
 
 // =============================
 // REGISTER USER
@@ -66,6 +67,7 @@ const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        cineCoins: user.cineCoins ?? 150,
       },
     });
 
@@ -145,6 +147,7 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        cineCoins: user.cineCoins ?? 150,
       },
     });
 
@@ -200,6 +203,9 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
     await user.save();
 
+    // Send reset code via email
+    await sendPasswordResetEmail(user.email, resetCode, user.name);
+
     res.status(200).json({
       success: true,
       message: "Password reset code sent successfully! Valid for 15 minutes.",
@@ -252,6 +258,9 @@ const resetPassword = async (req, res) => {
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
     await user.save();
+
+    // Send reset code via email
+    await sendPasswordResetEmail(user.email, resetCode, user.name);
 
     res.status(200).json({
       success: true,

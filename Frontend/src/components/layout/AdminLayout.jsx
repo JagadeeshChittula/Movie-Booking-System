@@ -2,6 +2,7 @@ import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Film,
+  MapPin,
   Building2,
   Monitor,
   Calendar,
@@ -16,6 +17,7 @@ const links = [
   { to: '/admin', end: true, icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/scanner', icon: QrCode, label: 'Gate Scanner' },
   { to: '/admin/movies', icon: Film, label: 'Movies' },
+  { to: '/admin/locations', icon: MapPin, label: 'Locations' },
   { to: '/admin/theatres', icon: Building2, label: 'Theatres' },
   { to: '/admin/screens', icon: Monitor, label: 'Screens' },
   { to: '/admin/shows', icon: Calendar, label: 'Shows' },

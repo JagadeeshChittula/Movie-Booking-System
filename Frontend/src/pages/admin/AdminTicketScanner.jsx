@@ -13,10 +13,11 @@ export default function AdminTicketScanner() {
   const [checkingIn, setCheckingIn] = useState(false);
 
   const cleanBookingId = (raw) => {
-    let clean = raw.trim();
+    let clean = (raw || '').trim();
     if (clean.startsWith('CINEVAULT_TICKET:')) {
       clean = clean.replace('CINEVAULT_TICKET:', '');
     }
+    clean = clean.replace(/^#/, '').replace(/^cv-/i, '').trim();
     return clean;
   };
 
@@ -81,7 +82,7 @@ export default function AdminTicketScanner() {
             <input
               type="text"
               className="input"
-              placeholder="Paste Booking ID or scan barcode / QR code…"
+              placeholder="Enter Booking Reference (e.g. #8A37FF9F, CV-..., or scan QR code)…"
               value={queryId}
               onChange={(e) => setQueryId(e.target.value)}
               style={{ paddingLeft: '2.75rem', fontSize: '1.05rem', fontFamily: 'monospace' }}

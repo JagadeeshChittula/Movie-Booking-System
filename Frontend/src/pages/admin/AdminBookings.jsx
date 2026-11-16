@@ -44,6 +44,7 @@ export default function AdminBookings() {
 
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim();
+      const cleanTerm = term.replace(/^#/, '').replace(/^cv-/i, '');
       list = list.filter((b) => {
         const userName = b.user?.name?.toLowerCase() || '';
         const userEmail = b.user?.email?.toLowerCase() || '';
@@ -51,13 +52,20 @@ export default function AdminBookings() {
         const theatreName = b.show?.theatre?.name?.toLowerCase() || '';
         const seats = b.seats?.join(', ')?.toLowerCase() || '';
         const status = b.bookingStatus?.toLowerCase() || '';
+        const idFull = (b._id || '').toLowerCase();
+        const ticketRef = (b._id ? b._id.slice(-8) : '').toLowerCase();
+        const bookingCode = (b.bookingCode || '').toLowerCase();
+
         return (
           userName.includes(term) ||
           userEmail.includes(term) ||
           movieTitle.includes(term) ||
           theatreName.includes(term) ||
           seats.includes(term) ||
-          status.includes(term)
+          status.includes(term) ||
+          idFull.includes(cleanTerm) ||
+          ticketRef.includes(cleanTerm) ||
+          bookingCode.includes(cleanTerm)
         );
       });
     }
@@ -140,6 +148,7 @@ export default function AdminBookings() {
         <table className="data-table">
           <thead>
             <tr>
+              <th>Ticket Ref</th>
               <th>User</th>
               <th>Movie</th>
               <th>Theatre</th>
@@ -152,7 +161,7 @@ export default function AdminBookings() {
           <tbody>
             {filteredBookings.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
                   No bookings matching current filters.{' '}
                   <button
                     type="button"
@@ -167,8 +176,25 @@ export default function AdminBookings() {
             ) : (
               filteredBookings.map((b) => {
                 const isCancelled = b.bookingStatus === 'CANCELLED';
+                const ticketRef = b._id ? `#${b._id.slice(-8).toUpperCase()}` : 'N/A';
                 return (
                   <tr key={b._id} className={isCancelled ? 'table-row-hidden' : ''}>
+                    <td>
+                      <span
+                        style={{
+                          fontFamily: 'monospace',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          background: 'rgba(255,255,255,0.08)',
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '4px',
+                          color: 'var(--gold)',
+                          display: 'inline-block',
+                        }}
+                      >
+                        {ticketRef}
+                      </span>
+                    </td>
                     <td>
                       <div style={{ fontWeight: 600 }}>{b.user?.name || 'Customer'}</div>
                       <small style={{ color: 'var(--text-dim)' }}>{b.user?.email}</small>

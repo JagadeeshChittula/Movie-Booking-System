@@ -163,6 +163,12 @@ export default function BookingDetailPage() {
             {booking.couponCode && (
               <p style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Promo applied: {booking.couponCode}</p>
             )}
+            {booking.coinsUsed > 0 && (
+              <p style={{ fontSize: '0.75rem', color: 'var(--gold)' }}>🪙 CineCoins Discount: -{formatCurrency(booking.coinsUsed)}</p>
+            )}
+            <p style={{ fontSize: '0.75rem', color: 'var(--gold)', marginTop: 2 }}>
+              ✨ Reward Points Earned: +{booking.coinsEarned || Math.max(15, Math.floor(booking.totalAmount * 0.1))} CineCoins
+            </p>
           </div>
           <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--gold)' }}>{formatCurrency(booking.totalAmount)}</p>
         </div>

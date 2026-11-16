@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Star, Calendar, Globe, Clock, Ticket } from 'lucide-react';
+import { Star, Calendar, Globe, Clock, Ticket, Heart, MessageSquare, Send, Check } from 'lucide-react';
 import { movieApi, showApi } from '../api/services';
 import ShowTimePicker from '../components/booking/ShowTimePicker';
 import TrailerModal from '../components/movie/TrailerModal';
@@ -23,6 +23,74 @@ export default function MovieDetailPage() {
   const [currentCity, setCurrentCity] = useState(getCity);
   const [allShowsForMovie, setAllShowsForMovie] = useState([]);
 
+  // Watchlist state
+  const [isWatchlisted, setIsWatchlisted] = useState(() => {
+    try {
+      const list = JSON.parse(localStorage.getItem('cv_watchlist') || '[]');
+      return list.includes(id);
+    } catch {
+      return false;
+    }
+  });
+
+  // Reviews state
+  const [reviews, setReviews] = useState([]);
+  const [userRatingVal, setUserRatingVal] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const toggleWatchlist = () => {
+    try {
+      const list = JSON.parse(localStorage.getItem('cv_watchlist') || '[]');
+      let next;
+      if (list.includes(id)) {
+        next = list.filter((item) => item !== id);
+        setIsWatchlisted(false);
+        toast.info('Removed from Watchlist');
+      } else {
+        next = [...list, id];
+        setIsWatchlisted(true);
+        toast.success('Added to Watchlist ❤️');
+      }
+      localStorage.setItem('cv_watchlist', JSON.stringify(next));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      toast.info('Please sign in to write a review');
+      navigate('/login', { state: { from: `/movies/${id}` } });
+      return;
+    }
+    if (!reviewComment.trim()) {
+      toast.error('Please write a review comment');
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const { data } = await movieApi.addReview(id, {
+        rating: userRatingVal,
+        comment: reviewComment,
+      });
+      setReviews(data.reviews || []);
+      setMovie((prev) => ({
+        ...prev,
+        userRating: data.userRating,
+        userRatingCount: data.userRatingCount,
+      }));
+      setReviewComment('');
+      toast.success('Review posted! Thank you for rating.');
+    } catch (err) {
+      toast.error(err.message || 'Failed to post review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   useEffect(() => {
     const handleCitySync = (e) => setCurrentCity(e.detail);
     window.addEventListener('citychange', handleCitySync);
@@ -33,6 +101,7 @@ export default function MovieDetailPage() {
     Promise.all([movieApi.getOne(id), showApi.getAll()])
       .then(([movieRes, showsRes]) => {
         setMovie(movieRes.data.movie);
+        setReviews(movieRes.data.movie?.reviews || []);
         const all = showsRes.data.shows || [];
         const forMovie = all.filter(
           (s) => (s.movie?._id || s.movie) === id && s.isActive !== false
@@ -120,8 +189,13 @@ export default function MovieDetailPage() {
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
             {movie.rating > 0 && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--gold)' }}>
-                <Star size={16} fill="currentColor" /> {movie.rating}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--gold)' }} title="Critic Rating">
+                <Star size={16} fill="currentColor" /> {movie.rating} (Critic)
+              </span>
+            )}
+            {movie.userRating > 0 && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#38bdf8' }} title="User Community Rating">
+                <Star size={16} fill="currentColor" /> {movie.userRating}/5 ({movie.userRatingCount} user reviews)
               </span>
             )}
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={16} /> {formatDuration(movie.duration)}</span>
@@ -135,6 +209,22 @@ export default function MovieDetailPage() {
                 Watch Trailer
               </button>
             )}
+
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={toggleWatchlist}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                color: isWatchlisted ? '#e50914' : 'inherit',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <Heart size={16} fill={isWatchlisted ? '#e50914' : 'none'} color={isWatchlisted ? '#e50914' : 'currentColor'} />
+              {isWatchlisted ? 'In Watchlist' : 'Add to Watchlist'}
+            </button>
           </div>
         </div>
       </div>
@@ -190,6 +280,101 @@ export default function MovieDetailPage() {
               Select Seats
             </button>
           </>
+        )}
+      </section>
+
+      {/* ================= COMMUNITY REVIEWS & RATINGS ================= */}
+      <section className="section" style={{ borderTop: '1px solid var(--border)', paddingTop: '2.5rem', marginTop: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div>
+            <h2 className="section__title" style={{ marginBottom: '0.25rem' }}>
+              Audience Reviews & Ratings
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              {reviews.length > 0
+                ? `${reviews.length} community review${reviews.length > 1 ? 's' : ''} · Average ${movie.userRating || 5}/5 Stars`
+                : 'Be the first to share your review!'}
+            </p>
+          </div>
+        </div>
+
+        {/* Write a Review Box */}
+        <div className="card" style={{ padding: '1.25rem', marginBottom: '2rem', background: 'rgba(20, 20, 30, 0.6)' }}>
+          <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+            <MessageSquare size={17} color="var(--accent)" />
+            Rate & Review this Movie
+          </h4>
+
+          <form onSubmit={handleReviewSubmit}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Your Rating:</span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setUserRatingVal(star)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 2,
+                      color: star <= userRatingVal ? 'var(--gold)' : 'var(--text-dim)',
+                    }}
+                  >
+                    <Star size={20} fill={star <= userRatingVal ? 'currentColor' : 'none'} />
+                  </button>
+                ))}
+              </div>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--gold)', marginLeft: '0.5rem' }}>
+                {userRatingVal} / 5 Stars
+              </span>
+            </div>
+
+            <textarea
+              className="input"
+              rows={3}
+              placeholder={isAuthenticated ? "Write your genuine thoughts, performance review, or cinema experience…" : "Sign in to share your review…"}
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              disabled={submittingReview}
+              style={{ width: '100%', marginBottom: '0.75rem', resize: 'vertical' }}
+            />
+
+            <button
+              type="submit"
+              className="btn btn--primary"
+              disabled={submittingReview || !reviewComment.trim()}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+            >
+              <Send size={15} />
+              {submittingReview ? 'Posting…' : 'Submit Review'}
+            </button>
+          </form>
+        </div>
+
+        {/* Reviews List */}
+        {reviews.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+            {reviews.map((r, idx) => (
+              <div key={idx} className="card" style={{ padding: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{r.userName}</div>
+                  <div style={{ display: 'flex', gap: 2, color: 'var(--gold)' }}>
+                    {Array.from({ length: r.rating }, (_, i) => (
+                      <Star key={i} size={13} fill="currentColor" />
+                    ))}
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  "{r.comment}"
+                </p>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>
+                  {new Date(r.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </section>
 
